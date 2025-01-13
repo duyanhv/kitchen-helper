@@ -17,6 +17,7 @@ import {
   TouchableWithoutFeedback,
   View,
   TouchableOpacity,
+  Text as RNText,
 } from "react-native";
 import { Image } from "expo-image";
 import { Text } from "@/components/Typography";
@@ -42,7 +43,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React from "react";
 import { Pager, PagerRef, RenderTabBarFnProps } from "@/view/com/pager/Pager";
 import { HomeHeader } from "@/view/com/home/HomeHeader";
@@ -67,7 +67,13 @@ import { Reload_Stroke2_Corner0_Rounded } from "@/components/icons/Reload";
 import HeatingFoodIcon from "../../../assets/icons/heating-food-in-flat-pan-on-fire-svgrepo-com.svg";
 import { DeleteBack_Stroke2_Corner0_Rounded } from "@/components/icons/DeleteBack";
 import { useMutation } from "@tanstack/react-query";
-import { GroupProduct, Product, productService, useGetRealTimeProducts } from "@/api/service";
+import {
+  GroupProduct,
+  Product,
+  productService,
+  useGetRealTimeProducts,
+  useProducts,
+} from "@/api/service";
 import { useFontScale } from "@/state/preferences/font-scale";
 import { fontSize } from "@/alf/tokens";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
@@ -78,6 +84,9 @@ export function HomeScreen({}: Props) {
   const [sessions, setSessions] = React.useState({
     accessToken: undefined,
   });
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts(
+    sessions.accessToken
+  );
 
   useGetRealTimeProducts(sessions.accessToken);
 
@@ -90,22 +99,22 @@ export function HomeScreen({}: Props) {
         }),
       onSuccess: (data) => {
         if (data && data.accessToken) {
-          getRequestProduct(data.accessToken);
           setSessions({ accessToken: data.accessToken });
         }
       },
     }
   );
-  const { mutate: getRequestProduct, isPending: isGettingRequestProduct } =
-    useMutation({
-      mutationFn: (token: string) =>
-        productService.requestProduct({
-          verifyToken: token,
-        }),
-      onSuccess: (data) => {
-        setProducts(data.data);
-      },
-    });
+  // const { mutate: getRequestProduct, isPending: isGettingRequestProduct } =
+  //   useMutation({
+  //     mutationKey: ["requestProduct"],
+  //     mutationFn: (token: string) =>
+  //       productService.requestProduct({
+  //         verifyToken: token,
+  //       }),
+  //     onSuccess: (data) => {
+  //       setProducts(data.data);
+  //     },
+  //   });
   const { mutate: loginMutation, isPending: isLoggingin } = useMutation({
     mutationKey: ["login"],
     mutationFn: () =>
@@ -114,10 +123,10 @@ export function HomeScreen({}: Props) {
         password: "MatKhau@123",
       }),
     onSuccess: (data) => {
-      if (data.verifyToken && data.userStores[0]?.storeId) {
+      if (data.verifyToken && data.userStores[1]?.storeId) {
         chooseStoreMutate({
           token: data.verifyToken,
-          storeId: data.userStores[0]?.storeId,
+          storeId: data.userStores[1]?.storeId,
         });
       }
     },
@@ -129,7 +138,6 @@ export function HomeScreen({}: Props) {
   useEffect(() => {
     loginMutation();
   }, []);
-
   const pagerRef = React.useRef<PagerRef>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(1);
   const renderTabBar = React.useCallback((props: RenderTabBarFnProps) => {
@@ -158,7 +166,7 @@ export function HomeScreen({}: Props) {
         <Tickets />
       </View>
       <View key="2" style={[atoms.flex_1]}>
-        <FoodTicket ticket={data} products={products} />
+        <FoodTicket ticket={data} products={productsData?.data || []} />
       </View>
     </Pager>
   );
@@ -171,9 +179,9 @@ export function FoodTicket({
   ticket: Ticket[];
   products: Product[];
 }) {
+  console.log(products, "products");
   const { _ } = useLingui();
   const t = useTheme();
-  console.log(products);
   const foodTickets = useMemo(() => {
     const foodItemMap = new Map<string, FoodTicketType>();
 
@@ -462,6 +470,14 @@ const FoodTicketItem = ({
       </Animated.View>
     );
   }
+  const [selectedProduct, setSelectedProduct] = useState<
+    | {
+        note: string | null;
+        quantity: number;
+        products: Product[];
+      }
+    | undefined
+  >(undefined);
   const renderProductDetail = useMemo(() => {
     return foodItem.items.map((product, productIndex) => {
       const isLast = productIndex === foodItem.items.length - 1;
@@ -487,7 +503,6 @@ const FoodTicketItem = ({
                   style={[
                     atoms.align_center,
                     atoms.justify_center,
-                    atoms.mb_md,
                     atoms.rounded_full,
                     atoms.border,
                     {
@@ -541,22 +556,25 @@ const FoodTicketItem = ({
                   </Text>
 
                   {product.note && (
-                    <Text
+                    <RNText
                       style={[
                         atoms.italic,
                         atoms.ml_lg,
                         {
                           color: t.palette.primary_500,
-                          fontStyle: "italic",
                           fontSize:
                             atoms.text_sm.fontSize *
                             fontScale *
                             (fontScale > 2 ? 0.4 : 1),
+                          flexWrap: "wrap",
+                          flexShrink: 1,
+                          maxWidth: "60%",
+                          overflow: "hidden",
                         },
                       ]}
                     >
                       {product.note}
-                    </Text>
+                    </RNText>
                   )}
                 </View>
                 <View
@@ -585,6 +603,24 @@ const FoodTicketItem = ({
                   >
                     <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
                   </Button>
+                  {product.quantity > 1 && (
+                    <Button
+                      label={_(msg`Go back`)}
+                      size="large"
+                      variant="solid"
+                      color="secondary"
+                      shape="square"
+                      onPress={() => {
+                        setSelectedProduct(product);
+                      }}
+                      hitSlop={HITSLOP_30}
+                    >
+                      <ButtonIcon
+                        icon={Bell_Stroke2_Corner0_Rounded}
+                        size="xl"
+                      />
+                    </Button>
+                  )}
                   <Button
                     label={_(msg`Go back`)}
                     size="large"
@@ -771,6 +807,11 @@ const FoodTicketItem = ({
           </Text>
         </View> */}
       </Animated.View>
+      <ServeQuantityModal
+        product={selectedProduct}
+        visible={!!selectedProduct}
+        onClose={() => setSelectedProduct(undefined)}
+      />
     </View>
   );
 };
@@ -1352,7 +1393,11 @@ export const ServeQuantityModal = ({
 }: {
   visible: boolean;
   onClose: () => void;
-  product: FoodItem;
+  product: {
+    note: string | null;
+    quantity: number;
+    products: Product[];
+  };
 }) => {
   const t = useTheme();
   const { _ } = useLingui();
@@ -1370,6 +1415,9 @@ export const ServeQuantityModal = ({
     setQuantity(quantity.slice(0, -1));
   };
   const addQuantity = (number: number) => {
+    if (Number(quantity + number) > product.quantity) {
+      return;
+    }
     if (quantity === "0") {
       setQuantity(number.toString());
       return;
@@ -1452,7 +1500,14 @@ export const ServeQuantityModal = ({
             </View>
             <Divider />
             <View style={[atoms.flex_row]}>
-              <View style={[atoms.flex_1]}></View>
+              <View style={[atoms.flex_1]}>
+                <Text style={[atoms.text_lg]}>
+                  {product?.products[0].productName}
+                </Text>
+                <Text style={[atoms.text_lg]}>
+                  <Trans>Qty</Trans>: {product?.quantity}
+                </Text>
+              </View>
               <View
                 style={[
                   atoms.border_l,

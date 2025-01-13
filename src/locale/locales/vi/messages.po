@@ -23,7 +23,7 @@ msgstr "Tất cả"
 
 #: src/screens/Home/Home.tsx:1447
 msgid "Choose quantity ready to serve"
-msgstr ""
+msgstr "Chọn số món để trả "
 
 #: src/screens/Home/Home.tsx:1114
 msgid "Close"
@@ -47,7 +47,7 @@ msgstr ""
 
 #: src/screens/Home/Home.tsx:1477
 msgid "Enter amount"
-msgstr ""
+msgstr "Nhập số lượng"
 
 #: src/view/shell/Drawer.tsx:123
 msgid "Font scale"

@@ -78,12 +78,9 @@ export const defaults: Schema = {
   fontScale: 1,
   disableHaptics: false,
   languagePrefs: {
-    primaryLanguage: deviceLanguageCodes[0] || "en",
+    primaryLanguage: deviceLanguageCodes[0] || "vi",
     // try full language tag first, then fallback to language code
-    appLanguage: findSupportedAppLanguage([
-      deviceLocales.at(0)?.languageTag,
-      deviceLanguageCodes[0],
-    ]),
+    appLanguage: 'vi',
   },
   onboarding: {
     step: "Home",

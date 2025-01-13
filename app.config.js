@@ -31,6 +31,13 @@ module.exports = {
     },
     plugins: [
       [
+        "expo-audio",
+        {
+          microphonePermission:
+            "Allow $(PRODUCT_NAME) to access your microphone.",
+        },
+      ],
+      [
         "expo-navigation-bar",
         {
           position: "relative",

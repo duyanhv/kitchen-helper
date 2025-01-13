@@ -117,6 +117,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
 export const FontScaleSlider = () => {
   const fontScale = useFontScale();
   const setFontScale = useSetFontScale();
+  const [localFontScale, setLocalFontScale] = React.useState(fontScale);
   return (
     <View>
       <Text>
@@ -125,10 +126,12 @@ export const FontScaleSlider = () => {
       <Slider
         style={{ width: "100%", height: 50 }}
         minimumValue={1}
-        value={fontScale}
+        value={localFontScale}
         maximumValue={10}
+        onSlidingComplete={(value) => setFontScale(value)}
         onValueChange={(value) => {
-          setFontScale(value);
+          // setFontScale(value);
+          setLocalFontScale(value);
         }}
       />
     </View>

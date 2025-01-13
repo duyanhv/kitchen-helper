@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import io from "socket.io-client";
+import { useAudioPlayer } from "expo-audio";
 
 export const PATH = {
   BASE_URL: "https://menu.1erp.vn",
@@ -12,9 +14,23 @@ export const PATH = {
   PRODUCT: {
     REQUEST: "/be-order/api/v1/request-product",
   },
+  REQUEST: "/be-order/api/v1/request",
 };
 
+export const useProducts = (accessToken?: string) => {
+  return useQuery<ProductList>({
+    queryKey: ["requestProduct"],
+    queryFn: () =>
+      productService.requestProduct({
+        verifyToken: accessToken!,
+      }),
+    enabled: !!accessToken, // Only run query when we have an accessToken
+  });
+};
 export const useGetRealTimeProducts = (accessToken: string) => {
+  const bellSound = useAudioPlayer(require("../../assets/audio/bell.mp3"));
+  const queryClient = useQueryClient();
+  const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
     if (accessToken) {
       const socket = io(`${PATH.BASE_URL}`, {
@@ -30,18 +46,72 @@ export const useGetRealTimeProducts = (accessToken: string) => {
       socket.on("connect", () => {
         console.log("Connected to server");
       });
-      socket.on("request.request-confirm-order", (data) => {
-        console.log("Received message:", data);
-      });
-      socket.onAny((eventName, ...args) => {
-        console.log("Received event:", eventName, ...args);
-        // ...
+      socket.on("request.request-confirm-order", (newProducts: Product[]) => {
+        if (newProducts.length > 0) {
+          bellSound.play();
+        }
+        queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+          if (!old)
+            return {
+              data: newProducts,
+              totalItems: newProducts.length,
+              totalPages: 1,
+            };
+
+          // Create a map of existing products for efficient lookup
+          const existingProductsMap = new Map(
+            old.data.map((product) => [product.id, product])
+          );
+
+          // Merge new products with existing ones
+          const mergedData = [...old.data];
+
+          newProducts.forEach((newProduct) => {
+            const existingIndex = mergedData.findIndex(
+              (p) => p.id === newProduct.id
+            );
+            if (existingIndex !== -1) {
+              // Update existing product
+              mergedData[existingIndex] = newProduct;
+            } else {
+              // Add new product
+              mergedData.push(newProduct);
+            }
+          });
+
+          return {
+            ...old,
+            data: mergedData,
+            totalItems: mergedData.length,
+          };
+        });
       });
       return () => {
         socket.disconnect();
       };
     }
   }, [accessToken]);
+};
+
+const requestOrder = async ({
+  storeId,
+  accessToken,
+}: {
+  storeId: string;
+  accessToken: string;
+}): Promise<Orders> => {
+  const response = await fetch(
+    PATH.BASE_URL + PATH.REQUEST + `?storeId=${storeId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  return response.json();
 };
 
 const chooseStore = async ({
@@ -120,6 +190,7 @@ export const productService = {
   login,
   requestProduct,
   chooseStore,
+  requestOrder,
 };
 
 interface Store {
@@ -174,7 +245,7 @@ enum OrderStatus {
   // Add other possible status values
 }
 
-interface ProductList extends Pagination {
+export interface ProductList extends Pagination {
   data: Product[];
 }
 
@@ -187,6 +258,7 @@ export interface Product {
   note: string | null;
   price: number;
   status: OrderStatus;
+  request: Request;
 }
 interface Pagination {
   totalItems: number;
@@ -202,4 +274,43 @@ export interface GroupProduct {
     quantity: number;
     products: Product[];
   }[];
+}
+
+export interface Request {
+  id: string;
+  table: Table;
+}
+
+export interface Table {
+  id: string;
+  name: string;
+  zone: Zone;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+}
+
+interface Customer {
+  name: string;
+}
+
+interface SessionCustomer {
+  id: string;
+  sessionId: string;
+  customer: Customer;
+}
+export interface Order {
+  id: string;
+  createdAt: string;
+  type: "STAFF" | "ORDER" | "PAYMENT";
+  status: "PENDING" | string; // Add other status types if needed
+  requestProducts: Product[];
+  sessionCustomer: SessionCustomer;
+  table: Table;
+}
+
+export interface Orders extends Pagination {
+  data: Order[];
 }

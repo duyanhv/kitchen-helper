@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "name": "Khu vực 1-5",
+    "type": "dine-in",
+    "foodItem": [
+      {
+        "id": 101,
+        "name": "Chicken Burger",
+        "quantities": 2,
+        "unitType": "pcs",
+        "status": "pending"
+      }
+    ],
+    "createdAt": 1709654400000
+  },
+  {
+    "id": 2,
+    "name": "Khu vực 1-6",
+    "type": "dine-in",
+    "foodItem": [
+      {
+        "id": 102,
+        "name": "Fresh Fish Fillet",
+        "quantities": 0.5,
+        "unitType": "pcs",
+        "status": "progressing"
+      }
+    ],
+    "createdAt": 1709654700000
+  },
+  {
+    "id": 3,
+    "name": "Khu vực 1-7",
+    "type": "dine-in",
+    "foodItem": [
+      {
+        "id": 103,
+        "name": "Pizza Margherita",
+        "quantities": 1,
+        "unitType": "pcs",
+        "status": "pending"
+      },
+      {
+        "id": 101,
+        "name": "Chicken Burger",
+        "quantities": 2,
+        "unitType": "pcs",
+        "status": "pending"
+      }
+    ],
+    "createdAt": 1709655000000
+  }
+]

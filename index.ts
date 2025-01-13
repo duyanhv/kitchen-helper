@@ -5,6 +5,9 @@ import {LogBox} from 'react-native'
 import {registerRootComponent} from 'expo'
 import App from './src/App.native'
 
+if (__DEV__) {
+  import('./ReactotronConfig').then(() => console.log('Reactotron Configured'));
+}
 
 if (process.env.NODE_ENV === 'test') {
   LogBox.ignoreAllLogs() // suppress all logs in tests

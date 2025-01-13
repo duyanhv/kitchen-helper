@@ -42,6 +42,7 @@ const schema = z.object({
     lastEmailConfirm: z.string().optional(),
   }),
   disableHaptics: z.boolean().optional(),
+  fontScale: z.number().optional(),
   languagePrefs: z.object({
     /**
      * The target language for translating posts.
@@ -74,6 +75,7 @@ export const defaults: Schema = {
   reminders: {
     lastEmailConfirm: undefined,
   },
+  fontScale: 1,
   disableHaptics: false,
   languagePrefs: {
     primaryLanguage: deviceLanguageCodes[0] || "en",

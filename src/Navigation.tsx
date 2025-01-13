@@ -71,8 +71,12 @@ function TabsNavigator() {
     <Tab.Navigator
       initialRouteName="HomeTab"
       backBehavior="initialRoute"
-      screenOptions={{ headerShown: false, lazy: true }}
-      tabBar={tabBar}
+      screenOptions={{
+        headerShown: false,
+        lazy: true,
+        tabBarStyle: { display: "none" },
+      }}
+      // tabBar={tabBar}
     >
       <Tab.Screen name="HomeTab" getComponent={() => HomeTabNavigator} />
     </Tab.Navigator>

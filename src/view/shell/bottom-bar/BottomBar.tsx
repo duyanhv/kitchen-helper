@@ -1,6 +1,6 @@
 import React, { ComponentProps } from "react";
 import { GestureResponderEvent, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
@@ -104,6 +104,7 @@ export function BottomBar({ navigation }: BottomTabBarProps) {
   return (
     <>
       <Animated.View
+        layout={LinearTransition}
         style={[
           styles.bottomBar,
           pal.view,
@@ -111,9 +112,9 @@ export function BottomBar({ navigation }: BottomTabBarProps) {
           { paddingBottom: clamp(safeAreaInsets.bottom, 15, 60) },
           // footerMinimalShellTransform,
         ]}
-        onLayout={(e) => {
-          footerHeight.set(e.nativeEvent.layout.height);
-        }}
+        // onLayout={(e) => {
+        //   footerHeight.set(e.nativeEvent.layout.height);
+        // }}
       >
         {hasSession ? (
           <>

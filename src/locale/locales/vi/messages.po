@@ -13,13 +13,29 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/screens/Home/Home.tsx:789
+msgid "All"
+msgstr "Tất cả"
+
 #: src/screens/Home/Home.tsx:153
-msgid "Basket"
-msgstr "Giỏ hàng"
+#~ msgid "Basket"
+#~ msgstr "Giỏ hàng"
+
+#: src/screens/Home/Home.tsx:1447
+msgid "Choose quantity ready to serve"
+msgstr ""
+
+#: src/screens/Home/Home.tsx:1114
+msgid "Close"
+msgstr "Đóng"
 
 #: src/view/com/util/BottomSheetCustomBackdrop.tsx:36
 msgid "Close bottom drawer"
 msgstr ""
+
+#: src/screens/Home/Home.tsx:790
+msgid "Dine in"
+msgstr "Ăn tại bàn"
 
 #: src/components/Dialog/index.tsx:305
 msgid "Dismiss"
@@ -29,32 +45,101 @@ msgstr ""
 msgid "Double tap to close the dialog"
 msgstr ""
 
+#: src/screens/Home/Home.tsx:1477
+msgid "Enter amount"
+msgstr ""
+
+#: src/view/shell/Drawer.tsx:123
+msgid "Font scale"
+msgstr ""
+
+#: src/screens/Home/Home.tsx:1345
+msgid "Glass"
+msgstr "Cốc"
+
+#: src/screens/Home/Home.tsx:380
+#: src/screens/Home/Home.tsx:391
+#: src/screens/Home/Home.tsx:407
+#: src/screens/Home/Home.tsx:418
+#: src/screens/Home/Home.tsx:429
+#: src/screens/Home/Home.tsx:585
+#: src/screens/Home/Home.tsx:596
+#: src/screens/Home/Home.tsx:1291
+#: src/screens/Home/Home.tsx:1302
 #: src/components/Layout/Header/index.tsx:112
 msgid "Go back"
 msgstr ""
 
-#: src/view/shell/bottom-bar/BottomBar.tsx:137
-#: src/screens/Home/Home.tsx:38
+#: src/view/shell/bottom-bar/BottomBar.tsx:138
 msgid "Home"
 msgstr "Đặt món"
 
 #: src/screens/Home/Home.tsx:158
-msgid "Items"
-msgstr "món"
+#~ msgid "Items"
+#~ msgstr "món"
+
+#: src/screens/Home/Home.tsx:832
+msgid "New chat"
+msgstr ""
+
+#: src/screens/Home/Home.tsx:1340
+msgid "Normal price"
+msgstr "Giá thường"
 
 #: src/components/Layout/Header/index.tsx:138
 msgid "Open drawer menu"
 msgstr ""
+
+#: src/screens/Home/Home.tsx:793
+msgid "Partner"
+msgstr ""
+
+#: src/screens/Home/Home.tsx:1345
+msgid "Piece"
+msgstr "Đĩa"
+
+#: src/view/com/home/HomeHeader.tsx:41
+msgid "Processing by items"
+msgstr "Chế biến theo món"
+
+#: src/screens/Home/Home.tsx:582
+#: src/screens/Home/Home.tsx:716
+#: src/screens/Home/Home.tsx:1344
+msgid "Qty"
+msgstr "Số lượng"
+
+#: src/screens/Home/Home.tsx:467
+msgid "Serve"
+msgstr ""
+
+#: src/screens/Home/Home.tsx:720
+#: src/screens/Home/Home.tsx:721
+#: src/screens/Home/Home.tsx:724
+#: src/screens/Home/Home.tsx:728
+#: src/screens/Home/Home.tsx:1078
+#: src/screens/Home/Home.tsx:1079
+#: src/screens/Home/Home.tsx:1082
+#: src/screens/Home/Home.tsx:1086
+#: src/screens/Home/Home.tsx:1204
+#: src/screens/Home/Home.tsx:1205
+#: src/screens/Home/Home.tsx:1208
+#: src/screens/Home/Home.tsx:1212
+msgid "Serve all"
+msgstr "Trả hết món"
 
 #: src/Navigation.tsx:52
 #: src/screens/Settings/Settings.tsx:16
 msgid "Settings"
 msgstr ""
 
-#: src/view/shell/bottom-bar/BottomBar.tsx:173
+#: src/screens/Home/Home.tsx:792
+msgid "Shipping"
+msgstr "Giao hàng"
+
 #: src/view/shell/bottom-bar/BottomBar.tsx:174
-#: src/view/shell/bottom-bar/BottomBar.tsx:177
-#: src/view/shell/bottom-bar/BottomBar.tsx:181
+#: src/view/shell/bottom-bar/BottomBar.tsx:175
+#: src/view/shell/bottom-bar/BottomBar.tsx:178
+#: src/view/shell/bottom-bar/BottomBar.tsx:182
 msgid "Sign in"
 msgstr "Đăng nhập"
 
@@ -62,7 +147,11 @@ msgstr "Đăng nhập"
 #: src/view/shell/bottom-bar/BottomBar.tsx:171
 #: src/view/shell/bottom-bar/BottomBar.tsx:174
 #~ msgid "Sign up"
-#~ msgstr ""
+#~ msgstr "Đăng ký"
+
+#: src/screens/Home/Home.tsx:791
+msgid "Takeaway"
+msgstr "Mang đi"
 
 #: src/lib/strings/errors.ts:18
 msgid "The server appears to be experiencing issues. Please try again in a few moments."
@@ -72,6 +161,25 @@ msgstr ""
 msgid "This feature is not available while using an App Password. Please sign in with your main password."
 msgstr ""
 
+#: src/view/com/home/HomeHeader.tsx:41
+msgid "Ticket"
+msgstr "Phiếu bếp"
+
+#: src/screens/Home/Home.tsx:1031
+msgid "Ticket detail"
+msgstr "Chi tiết phiếu chế biến"
+
+#: src/screens/Home/Home.tsx:1589
+msgid "Trả món"
+msgstr ""
+
 #: src/lib/strings/errors.ts:11
 msgid "Unable to connect. Please check your internet connection and try again."
 msgstr ""
+
+#: src/screens/Home/Home.tsx:1065
+#: src/screens/Home/Home.tsx:1066
+#: src/screens/Home/Home.tsx:1069
+#: src/screens/Home/Home.tsx:1073
+msgid "Won't do"
+msgstr "Huỷ chế biến"

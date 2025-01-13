@@ -3,11 +3,13 @@ module.exports = {
     name: "kitchen-helper",
     slug: "kitchen-helper",
     version: "1.0.0",
-    orientation: "portrait",
     userInterfaceStyle: "automatic",
     icon: "./assets/app-icons/ios_icon_default_light.png",
     newArchEnabled: false,
     scheme: "myapp",
+    androidStatusBar: {
+      hidden: true,
+    },
     ios: {
       supportsTablet: true,
       bundleIdentifier: "xyz.kitchen-duyanhv.app",
@@ -28,17 +30,31 @@ module.exports = {
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
+      [
+        "expo-navigation-bar",
+        {
+          position: "relative",
+          visibility: "hidden",
+          behavior: "overlay-swipe",
+        },
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          initialOrientation: "LANDSCAPE",
+        },
+      ],
       "react-native-edge-to-edge",
       [
-        'expo-build-properties',
+        "expo-build-properties",
         {
           ios: {
-            deploymentTarget: '15.1',
+            deploymentTarget: "15.1",
           },
           android: {
             compileSdkVersion: 35,
             targetSdkVersion: 35,
-            buildToolsVersion: '35.0.0',
+            buildToolsVersion: "35.0.0",
           },
         },
       ],

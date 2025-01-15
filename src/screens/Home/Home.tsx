@@ -555,6 +555,7 @@ const FoodTicketItem = ({
       return (
         <View key={`${product.note}-${productIndex}`} style={[atoms.flex_1]}>
           <Swipeable
+            enabled={false}
             containerStyle={[atoms.flex_1]}
             friction={2}
             enableTrackpadTwoFingerGesture

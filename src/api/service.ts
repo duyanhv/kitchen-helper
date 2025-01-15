@@ -1,9 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import io from "socket.io-client";
-import { useAudioPlayer } from "expo-audio";
+import { useAudioPlayer, AudioModule } from "expo-audio";
 import Toast from "react-native-toast-message";
 import { useFontScale } from "@/state/preferences/font-scale";
+import { Alert } from "react-native";
+import { useAssets } from "expo-asset";
+import { Audio } from "expo-av";
 
 export const PATH = {
   BASE_URL: "https://menu.1erp.vn",
@@ -55,17 +58,42 @@ export const useProducts = (accessToken?: string) => {
 };
 export const useGetRealTimeProducts = (accessToken: string) => {
   const fontScale = useFontScale();
-  const bellSound = useAudioPlayer(require("../../assets/audio/bell.mp3"));
+  const [assets, error] = useAssets([require("../../assets/audio/bell.mp3")]);
+  const bellSound = useAudioPlayer(assets ? assets[0] : null);
+  const [sound, setSound] = useState();
   const queryClient = useQueryClient();
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
   const playSound = async () => {
-    try {
-      await bellSound.seekTo(0); // Reset to beginning
-      bellSound.play();
-    } catch (error) {
-      console.error("Error playing sound:", error);
-    }
+    const { sound } = await Audio.Sound.createAsync(
+      require("../../assets/audio/bell.mp3")
+    );
+    setSound(sound);
+
+    console.log("Playing Sound");
+    await sound.playAsync();
+    // try {
+    //   await bellSound.seekTo(0); // Reset to beginning
+    //   bellSound.play();
+    // } catch (error) {
+    //   console.error("Error playing sound:", error);
+    // }
   };
+  useEffect(() => {
+    return sound
+      ? () => {
+          console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+  useEffect(() => {
+    (async () => {
+      const status = await AudioModule.requestRecordingPermissionsAsync();
+      if (!status.granted) {
+        Alert.alert("Permission to access microphone was denied");
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (accessToken) {
@@ -89,7 +117,7 @@ export const useGetRealTimeProducts = (accessToken: string) => {
       newSocket.on(
         "request.request-confirm-order",
         async (incProducts: Product[]) => {
-          const newProducts = incProducts
+          const newProducts = incProducts;
           if (newProducts.length > 0) {
             await playSound();
             Toast.show({
@@ -98,7 +126,8 @@ export const useGetRealTimeProducts = (accessToken: string) => {
               text2: newProducts.map((p) => p.productName).join(", "),
               text2Style: [
                 {
-                  fontSize: fontScale * 14 * (fontScale > 2 ? 0.8 : 1),
+                  fontSize: fontScale * 20 * (fontScale > 2 ? 0.8 : 1),
+                  color: "#000",
                 },
               ],
             });

@@ -31,6 +31,12 @@ module.exports = {
     },
     plugins: [
       [
+        "expo-asset",
+        {
+          assets: ["./assets/audio/bell.mp3"],
+        },
+      ],
+      [
         "expo-audio",
         {
           microphonePermission:

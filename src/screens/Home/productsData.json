@@ -1,0 +1,128 @@
+[
+  {
+    "id": "c338d5d5-7eb0-49f4-8333-d8073b94cc5b",
+    "createdAt": "2025-01-15T01:36:36.190Z",
+    "productId": "276c6995-544a-4cf5-a593-03f33293d4e0",
+    "productName": "Bánh canh xương",
+    "quantity": 1,
+    "note": null,
+    "price": 35000,
+    "status": "PENDING",
+    "request": {
+      "id": "39913819-9962-4305-b63f-ca792baca24d",
+      "table": {
+        "id": "7c7bec81-1d25-406b-a0a2-d523fb0dd00c",
+        "name": "11",
+        "zone": {
+          "id": "64180d3f-0279-457b-8f58-30cf05520031",
+          "name": "cnncvn"
+        }
+      }
+    }
+  },
+  {
+    "id": "19961db1-fa75-4745-8b2c-b76ec733fb1a",
+    "createdAt": "2025-01-15T01:42:40.637Z",
+    "productId": "2a0a24a1-9be4-49fe-9c27-68b3f52d1ea3",
+    "productName": "Bún Thịt Nướng",
+    "quantity": 1,
+    "note": null,
+    "price": 50000,
+    "status": "PENDING",
+    "request": {
+      "id": "53ffc4b2-7d2d-4417-97ae-093c85962668",
+      "table": {
+        "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
+        "name": "Bàn 05",
+        "zone": {
+          "id": "0c22bd15-1f89-441e-9871-45e538fe9159",
+          "name": "Tầng 1"
+        }
+      }
+    }
+  },
+  {
+    "id": "590f59ed-c9db-41b1-96ba-b603ef3a95ec",
+    "createdAt": "2025-01-15T02:23:47.231Z",
+    "productId": "276c6995-544a-4cf5-a593-03f33293d4e0",
+    "productName": "Bánh canh xương",
+    "quantity": 1,
+    "note": null,
+    "price": 35000,
+    "status": "PENDING",
+    "request": {
+      "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "table": {
+        "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
+        "name": "Bàn 05",
+        "zone": {
+          "id": "0c22bd15-1f89-441e-9871-45e538fe9159",
+          "name": "Tầng 1"
+        }
+      }
+    }
+  },
+  {
+    "id": "fed4cd2d-5d61-4f36-a48c-5ab0fd69632a",
+    "createdAt": "2025-01-15T02:23:47.231Z",
+    "productId": "4757f7d3-1a5f-4026-966a-24aa5ff29d9d",
+    "productName": "Mực hấp",
+    "quantity": 1,
+    "note": null,
+    "price": 125000,
+    "status": "PENDING",
+    "request": {
+      "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "table": {
+        "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
+        "name": "Bàn 05",
+        "zone": {
+          "id": "0c22bd15-1f89-441e-9871-45e538fe9159",
+          "name": "Tầng 1"
+        }
+      }
+    }
+  },
+  {
+    "id": "4af5eb56-ef20-4db4-9f02-61e40fb3a172",
+    "createdAt": "2025-01-15T02:23:47.231Z",
+    "productId": "766691a3-22b6-4672-991b-69bba71edab5",
+    "productName": "Kem ly",
+    "quantity": 1,
+    "note": null,
+    "price": 43000,
+    "status": "PENDING",
+    "request": {
+      "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "table": {
+        "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
+        "name": "Bàn 05",
+        "zone": {
+          "id": "0c22bd15-1f89-441e-9871-45e538fe9159",
+          "name": "Tầng 1"
+        }
+      }
+    }
+  },
+  {
+    "id": "b9fb351d-b101-4966-98c2-886a77465108",
+    "createdAt": "2025-01-15T04:04:35.648Z",
+    "productId": "09f346eb-e8f7-4872-a5f8-48b9c2c5cd93",
+    "productName": "Sà Bì Chưởng",
+    "quantity": 1,
+    "note": null,
+    "price": 99000,
+    "status": "PENDING",
+    "request": {
+      "id": "f651879e-5718-4c23-bc2d-2e60a54cb68d",
+      "table": {
+        "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
+        "name": "Bàn 05",
+        "zone": {
+          "id": "0c22bd15-1f89-441e-9871-45e538fe9159",
+          "name": "Tầng 1"
+        }
+      }
+    }
+  }
+]

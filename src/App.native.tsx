@@ -6,6 +6,7 @@ import I18nProvider from "@/locale/i18nProvider";
 import { Provider as ShellStateProvider } from "@/state/shell";
 import { Provider as ModalStateProvider } from "@/state/modals";
 import { Provider as DialogStateProvider } from "@/state/dialogs";
+import Toast from "react-native-toast-message";
 import {
   Provider as SessionProvider,
   SessionAccount,
@@ -62,6 +63,7 @@ function InnerApp() {
           </React.Fragment>
         </RootSiblingParent>
       </Splash>
+      <Toast />
     </Alf>
   );
 }

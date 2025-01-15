@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import io from "socket.io-client";
 import { useAudioPlayer } from "expo-audio";
+import Toast from "react-native-toast-message";
+import { useFontScale } from "@/state/preferences/font-scale";
 
 export const PATH = {
   BASE_URL: "https://menu.1erp.vn",
@@ -17,6 +19,30 @@ export const PATH = {
   REQUEST: "/be-order/api/v1/request",
 };
 
+const updateProductsStatus = async ({
+  productIds,
+  status,
+  accessToken,
+}: {
+  productIds: string[];
+  status: "COMPLETED";
+  accessToken: string;
+}) => {
+  const response = await fetch(PATH.BASE_URL + PATH.PRODUCT.REQUEST, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      status,
+      ids: productIds,
+    }),
+  });
+
+  return response.json();
+};
+
 export const useProducts = (accessToken?: string) => {
   return useQuery<ProductList>({
     queryKey: ["requestProduct"],
@@ -28,69 +54,122 @@ export const useProducts = (accessToken?: string) => {
   });
 };
 export const useGetRealTimeProducts = (accessToken: string) => {
+  const fontScale = useFontScale();
   const bellSound = useAudioPlayer(require("../../assets/audio/bell.mp3"));
   const queryClient = useQueryClient();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+  const playSound = async () => {
+    try {
+      await bellSound.seekTo(0); // Reset to beginning
+      bellSound.play();
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
+  };
+
   useEffect(() => {
     if (accessToken) {
-      const socket = io(`${PATH.BASE_URL}`, {
-        transportOptions: {
-          polling: {
-            extraHeaders: {
-              Authorization: accessToken,
-            },
-          },
+      const newSocket = io(`${PATH.BASE_URL}`, {
+        auth: {
+          token: accessToken,
         },
-      }); // Replace with your server address
+        extraHeaders: {
+          Authorization: accessToken,
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        transports: ["websocket", "polling"],
+      });
 
-      socket.on("connect", () => {
+      newSocket.on("connect", () => {
         console.log("Connected to server");
       });
-      socket.on("request.request-confirm-order", (newProducts: Product[]) => {
-        if (newProducts.length > 0) {
-          bellSound.play();
-        }
-        queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
-          if (!old)
-            return {
-              data: newProducts,
-              totalItems: newProducts.length,
-              totalPages: 1,
-            };
 
-          // Create a map of existing products for efficient lookup
-          const existingProductsMap = new Map(
-            old.data.map((product) => [product.id, product])
-          );
-
-          // Merge new products with existing ones
-          const mergedData = [...old.data];
-
-          newProducts.forEach((newProduct) => {
-            const existingIndex = mergedData.findIndex(
-              (p) => p.id === newProduct.id
-            );
-            if (existingIndex !== -1) {
-              // Update existing product
-              mergedData[existingIndex] = newProduct;
-            } else {
-              // Add new product
-              mergedData.push(newProduct);
+      newSocket.on(
+        "request.request-confirm-order",
+        async (incProducts: Product[]) => {
+          const newProducts = incProducts
+          if (newProducts.length > 0) {
+            await playSound();
+            Toast.show({
+              type: "success",
+              text1: "Có sản phẩm mới",
+              text2: newProducts.map((p) => p.productName).join(", "),
+              text2Style: [
+                {
+                  fontSize: fontScale * 14 * (fontScale > 2 ? 0.8 : 1),
+                },
+              ],
+            });
+          }
+          queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+            if (!old) {
+              return {
+                data: newProducts,
+                totalItems: newProducts.length,
+                totalPages: 1,
+              };
             }
-          });
 
-          return {
-            ...old,
-            data: mergedData,
-            totalItems: mergedData.length,
-          };
-        });
-      });
+            const mergedData = old.data.map((existingProduct) => {
+              const updatedProduct = newProducts.find(
+                (p) => p.id === existingProduct.id
+              );
+              return updatedProduct || existingProduct;
+            });
+
+            // Add any new products that don't exist in the current data
+            const newUniqueProducts = newProducts.filter(
+              (newProduct) => !old.data.some((p) => p.id === newProduct.id)
+            );
+
+            return {
+              ...old,
+              data: [...mergedData, ...newUniqueProducts],
+              totalItems: mergedData.length + newUniqueProducts.length,
+            };
+          });
+        }
+      );
+
+      setSocket(newSocket);
+
       return () => {
-        socket.disconnect();
+        newSocket.disconnect();
+        bellSound.remove();
       };
     }
   }, [accessToken]);
+
+  const emitEvent = useCallback(
+    (event: string, data: any) => {
+      if (!socket) {
+        console.warn("Socket instance not available");
+        return;
+      }
+
+      if (!socket.connected) {
+        console.warn("Socket is not connected");
+        return;
+      }
+
+      try {
+        console.log(`Emitting ${event}:`, data);
+        socket.emit(event, data, (response: any) => {
+          console.log(`Response for ${event}:`, response);
+        });
+      } catch (error) {
+        console.error(`Error emitting ${event}:`, error);
+      }
+    },
+    [socket]
+  );
+
+  return {
+    socket,
+    emit: emitEvent,
+  };
 };
 
 const requestOrder = async ({
@@ -191,6 +270,7 @@ export const productService = {
   requestProduct,
   chooseStore,
   requestOrder,
+  updateProductsStatus,
 };
 
 interface Store {
@@ -313,4 +393,11 @@ export interface Order {
 
 export interface Orders extends Pagination {
   data: Order[];
+}
+
+export interface GroupedProductsByTable {
+  tableId: string;
+  tableName: string;
+  zoneName: string;
+  products: GroupProduct[];
 }

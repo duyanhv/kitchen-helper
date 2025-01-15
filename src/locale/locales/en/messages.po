@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/screens/Home/Home.tsx:789
+#: src/screens/Home/Home.tsx:908
 msgid "All"
 msgstr ""
 
@@ -21,11 +21,11 @@ msgstr ""
 #~ msgid "Basket"
 #~ msgstr ""
 
-#: src/screens/Home/Home.tsx:1447
+#: src/screens/Home/Home.tsx:1791
 msgid "Choose quantity ready to serve"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1114
+#: src/screens/Home/Home.tsx:1296
 msgid "Close"
 msgstr ""
 
@@ -33,7 +33,7 @@ msgstr ""
 msgid "Close bottom drawer"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:790
+#: src/screens/Home/Home.tsx:909
 msgid "Dine in"
 msgstr ""
 
@@ -45,27 +45,28 @@ msgstr ""
 msgid "Double tap to close the dialog"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1477
+#: src/screens/Home/Home.tsx:1828
 msgid "Enter amount"
 msgstr ""
 
-#: src/view/shell/Drawer.tsx:123
+#: src/view/shell/Drawer.tsx:124
 msgid "Font scale"
 msgstr ""
 
 #: src/screens/Home/Home.tsx:1345
-msgid "Glass"
-msgstr ""
+#~ msgid "Glass"
+#~ msgstr ""
 
-#: src/screens/Home/Home.tsx:380
-#: src/screens/Home/Home.tsx:391
-#: src/screens/Home/Home.tsx:407
-#: src/screens/Home/Home.tsx:418
+#: src/screens/Home/Home.tsx:402
+#: src/screens/Home/Home.tsx:413
 #: src/screens/Home/Home.tsx:429
-#: src/screens/Home/Home.tsx:585
-#: src/screens/Home/Home.tsx:596
-#: src/screens/Home/Home.tsx:1291
-#: src/screens/Home/Home.tsx:1302
+#: src/screens/Home/Home.tsx:440
+#: src/screens/Home/Home.tsx:451
+#: src/screens/Home/Home.tsx:645
+#: src/screens/Home/Home.tsx:660
+#: src/screens/Home/Home.tsx:677
+#: src/screens/Home/Home.tsx:1543
+#: src/screens/Home/Home.tsx:1571
 #: src/components/Layout/Header/index.tsx:112
 msgid "Go back"
 msgstr ""
@@ -79,51 +80,49 @@ msgstr ""
 #~ msgstr ""
 
 #: src/screens/Home/Home.tsx:832
-msgid "New chat"
-msgstr ""
+#~ msgid "New chat"
+#~ msgstr ""
 
 #: src/screens/Home/Home.tsx:1340
-msgid "Normal price"
-msgstr ""
+#~ msgid "Normal price"
+#~ msgstr ""
 
 #: src/components/Layout/Header/index.tsx:138
 msgid "Open drawer menu"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:793
+#: src/screens/Home/Home.tsx:912
 msgid "Partner"
 msgstr ""
 
 #: src/screens/Home/Home.tsx:1345
-msgid "Piece"
-msgstr ""
+#~ msgid "Piece"
+#~ msgstr ""
 
 #: src/view/com/home/HomeHeader.tsx:41
 msgid "Processing by items"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:582
-#: src/screens/Home/Home.tsx:716
-#: src/screens/Home/Home.tsx:1344
+#: src/screens/Home/Home.tsx:642
+#: src/screens/Home/Home.tsx:816
+#: src/screens/Home/Home.tsx:1538
+#: src/screens/Home/Home.tsx:1648
+#: src/screens/Home/Home.tsx:1809
 msgid "Qty"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:467
+#: src/screens/Home/Home.tsx:495
 msgid "Serve"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:720
-#: src/screens/Home/Home.tsx:721
-#: src/screens/Home/Home.tsx:724
-#: src/screens/Home/Home.tsx:728
-#: src/screens/Home/Home.tsx:1078
-#: src/screens/Home/Home.tsx:1079
-#: src/screens/Home/Home.tsx:1082
-#: src/screens/Home/Home.tsx:1086
-#: src/screens/Home/Home.tsx:1204
-#: src/screens/Home/Home.tsx:1205
-#: src/screens/Home/Home.tsx:1208
-#: src/screens/Home/Home.tsx:1212
+#: src/screens/Home/Home.tsx:828
+#: src/screens/Home/Home.tsx:829
+#: src/screens/Home/Home.tsx:832
+#: src/screens/Home/Home.tsx:836
+#: src/screens/Home/Home.tsx:1260
+#: src/screens/Home/Home.tsx:1261
+#: src/screens/Home/Home.tsx:1264
+#: src/screens/Home/Home.tsx:1268
 msgid "Serve all"
 msgstr ""
 
@@ -132,7 +131,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:792
+#: src/screens/Home/Home.tsx:911
 msgid "Shipping"
 msgstr ""
 
@@ -149,7 +148,7 @@ msgstr ""
 #~ msgid "Sign up"
 #~ msgstr ""
 
-#: src/screens/Home/Home.tsx:791
+#: src/screens/Home/Home.tsx:910
 msgid "Takeaway"
 msgstr ""
 
@@ -165,11 +164,11 @@ msgstr ""
 msgid "Ticket"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1031
+#: src/screens/Home/Home.tsx:1213
 msgid "Ticket detail"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1589
+#: src/screens/Home/Home.tsx:1943
 msgid "Trả món"
 msgstr ""
 
@@ -177,9 +176,9 @@ msgstr ""
 msgid "Unable to connect. Please check your internet connection and try again."
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1065
-#: src/screens/Home/Home.tsx:1066
-#: src/screens/Home/Home.tsx:1069
-#: src/screens/Home/Home.tsx:1073
+#: src/screens/Home/Home.tsx:1247
+#: src/screens/Home/Home.tsx:1248
+#: src/screens/Home/Home.tsx:1251
+#: src/screens/Home/Home.tsx:1255
 msgid "Won't do"
 msgstr ""

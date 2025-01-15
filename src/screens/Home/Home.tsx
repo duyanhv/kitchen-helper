@@ -18,6 +18,7 @@ import {
   View,
   TouchableOpacity,
   Text as RNText,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { Text } from "@/components/Typography";
@@ -66,10 +67,12 @@ import { FAB } from "@/view/com/util/fab/FAB";
 import { Reload_Stroke2_Corner0_Rounded } from "@/components/icons/Reload";
 import HeatingFoodIcon from "../../../assets/icons/heating-food-in-flat-pan-on-fire-svgrepo-com.svg";
 import { DeleteBack_Stroke2_Corner0_Rounded } from "@/components/icons/DeleteBack";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  GroupedProductsByTable,
   GroupProduct,
   Product,
+  ProductList,
   productService,
   useGetRealTimeProducts,
   useProducts,
@@ -77,6 +80,7 @@ import {
 import { useFontScale } from "@/state/preferences/font-scale";
 import { fontSize } from "@/alf/tokens";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import ServeIcon from "../../../assets/icons/restaurant-waiter.svg";
 
 type Props = NativeStackScreenProps<HomeTabNavigatorParams, "Home">;
 export function HomeScreen({}: Props) {
@@ -88,7 +92,7 @@ export function HomeScreen({}: Props) {
     sessions.accessToken
   );
 
-  useGetRealTimeProducts(sessions.accessToken);
+  const { emit, socket } = useGetRealTimeProducts(sessions.accessToken);
 
   const { mutate: chooseStoreMutate, isPending: isChoosingStore } = useMutation(
     {
@@ -163,10 +167,18 @@ export function HomeScreen({}: Props) {
       renderTabBar={renderTabBar}
     >
       <View key="1" style={[atoms.flex_1]}>
-        <Tickets />
+        <Tickets
+          products={productsData?.data || []}
+          accessToken={sessions.accessToken}
+        />
       </View>
       <View key="2" style={[atoms.flex_1]}>
-        <FoodTicket ticket={data} products={productsData?.data || []} />
+        <FoodTicket
+          ticket={data}
+          emit={emit}
+          products={productsData?.data || []}
+          accessToken={sessions.accessToken}
+        />
       </View>
     </Pager>
   );
@@ -175,9 +187,13 @@ export function HomeScreen({}: Props) {
 export function FoodTicket({
   ticket,
   products,
+  emit,
+  accessToken,
 }: {
   ticket: Ticket[];
   products: Product[];
+  emit: (event: string, data: any) => void;
+  accessToken: string;
 }) {
   console.log(products, "products");
   const { _ } = useLingui();
@@ -264,7 +280,6 @@ export function FoodTicket({
 
       return acc;
     }, new Map());
-
     // Convert Map to array and transform the items Map to array
     return Array.from(groupedMap.values()).map((group) => ({
       ...group,
@@ -290,6 +305,8 @@ export function FoodTicket({
             item={foodItem}
             index={index}
             enableRowActions={enableRowActions}
+            emit={emit}
+            accessToken={accessToken}
           />
         )}
       />
@@ -356,10 +373,14 @@ const FoodTicketItem = ({
   item: foodItem,
   enableRowActions = false,
   index: foodTicketIndex,
+  emit,
+  accessToken,
 }: {
   item: GroupProduct;
   enableRowActions?: boolean;
   index: number;
+  emit: (event: string, data: any) => void;
+  accessToken: string;
 }) => {
   const t = useTheme();
   const { _ } = useLingui();
@@ -443,6 +464,12 @@ const FoodTicketItem = ({
   };
   const QUANTITY_BOX_SIZE = 45;
 
+  const handleServeProduct = (product: Product) => {
+    emit("request.request-confirm-order", {
+      productId: "heyyyy",
+    });
+  };
+
   function RightAction(prog: SharedValue<number>, drag: SharedValue<number>) {
     const styleAnimation = useAnimatedStyle(() => {
       return {
@@ -478,6 +505,50 @@ const FoodTicketItem = ({
       }
     | undefined
   >(undefined);
+  const queryClient = useQueryClient();
+
+  const { mutate: updateProductStatus } = useMutation({
+    mutationKey: ["updateProductsStatus"],
+    mutationFn: ({
+      productIds,
+      status,
+    }: {
+      productIds: string[];
+      status: string;
+    }) =>
+      productService.updateProductsStatus({
+        productIds,
+        status: "COMPLETED",
+        accessToken: accessToken,
+      }),
+    onSuccess: (data) => {
+      if (data && data.status === "success") {
+        // Toast.show("Đã thực hiện", "success");
+      }
+    },
+    onError: (e) => {
+      console.log(e, "error");
+    },
+  });
+
+  const handleRemoveProduct = (products: Product[]) => {
+    updateProductStatus({
+      productIds: products.map((product) => product.id),
+      status: "COMPLETED",
+      accessToken: accessToken,
+    });
+    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+      if (!old) return old;
+      const newProducts = old.data.filter(
+        (product) => !products.find((p) => p.id === product.id)
+      );
+      return {
+        ...old,
+        data: newProducts,
+      };
+    });
+  };
+
   const renderProductDetail = useMemo(() => {
     return foodItem.items.map((product, productIndex) => {
       const isLast = productIndex === foodItem.items.length - 1;
@@ -498,33 +569,6 @@ const FoodTicketItem = ({
                 atoms.gap_md,
               ]}
             >
-              <View>
-                <View
-                  style={[
-                    atoms.align_center,
-                    atoms.justify_center,
-                    atoms.rounded_full,
-                    atoms.border,
-                    {
-                      width: 40 * fontScale * (fontScale > 2 ? 0.2 : 1),
-                      height: 40 * fontScale * (fontScale > 2 ? 0.2 : 1),
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      {
-                        fontSize:
-                          atoms.text_md.fontSize *
-                          fontScale *
-                          (fontScale > 2 ? 0.3 : 1),
-                      },
-                    ]}
-                  >
-                    {productIndex + 1}
-                  </Text>
-                </View>
-              </View>
               <View
                 style={[
                   !isLast && {
@@ -532,6 +576,11 @@ const FoodTicketItem = ({
                   },
                   {
                     borderStyle: "dashed",
+                    paddingLeft:
+                      QUANTITY_BOX_SIZE *
+                        fontScale *
+                        (fontScale > 2 ? 0.3 : 1) +
+                      24,
                   },
                   t.atoms.border_contrast_high,
                   atoms.flex_1,
@@ -541,7 +590,7 @@ const FoodTicketItem = ({
                   atoms.py_xl,
                 ]}
               >
-                <View style={[atoms.gap_md]}>
+                <View style={[atoms.gap_md, atoms.flex_1]}>
                   <Text
                     style={[
                       {
@@ -552,7 +601,7 @@ const FoodTicketItem = ({
                       },
                     ]}
                   >
-                    {foodItem.productName}
+                    - {foodItem.productName}
                   </Text>
 
                   {product.note && (
@@ -568,7 +617,7 @@ const FoodTicketItem = ({
                             (fontScale > 2 ? 0.4 : 1),
                           flexWrap: "wrap",
                           flexShrink: 1,
-                          maxWidth: "60%",
+                          maxWidth: "65%",
                           overflow: "hidden",
                         },
                       ]}
@@ -598,10 +647,13 @@ const FoodTicketItem = ({
                     variant="solid"
                     color="primary"
                     shape="square"
-                    onPress={() => {}}
+                    onPress={() => {
+                      handleRemoveProduct(product.products);
+                    }}
                     hitSlop={HITSLOP_30}
                   >
-                    <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
+                    {/* <ServeIcon /> */}
+                    <ButtonIcon icon={ServeIcon} size="xl" />
                   </Button>
                   {product.quantity > 1 && (
                     <Button
@@ -615,10 +667,7 @@ const FoodTicketItem = ({
                       }}
                       hitSlop={HITSLOP_30}
                     >
-                      <ButtonIcon
-                        icon={Bell_Stroke2_Corner0_Rounded}
-                        size="xl"
-                      />
+                      <ButtonIcon icon={ServeIcon} size="xl" />
                     </Button>
                   )}
                   <Button
@@ -627,7 +676,24 @@ const FoodTicketItem = ({
                     variant="solid"
                     color="negative"
                     shape="square"
-                    onPress={() => {}}
+                    onPress={() => {
+                      Alert.alert(
+                        "Huỷ yêu cầu",
+                        "Bạn có muốn huỷ yêu cầu này?",
+                        [
+                          {
+                            text: "Huỷ",
+                            onPress: () => {},
+                            style: "cancel",
+                          },
+                          {
+                            text: "Đồng ý",
+                            onPress: () =>
+                              handleRemoveProduct(product.products),
+                          },
+                        ]
+                      );
+                    }}
                     hitSlop={HITSLOP_30}
                   >
                     <ButtonIcon
@@ -747,7 +813,15 @@ const FoodTicketItem = ({
                 <Trans>Qty</Trans>:{` ${totalQuantity}`}
               </Text>
               <Button
-                onPress={() => {}}
+                onPress={() => {
+                  const allProducts = foodItem.items.reduce<Product[]>(
+                    (acc, item) => {
+                      return [...acc, ...item.products];
+                    },
+                    []
+                  );
+                  handleRemoveProduct(allProducts);
+                }}
                 accessibilityHint={_(msg`Serve all`)}
                 accessibilityLabel={_(msg`Serve all`)}
                 variant="solid"
@@ -816,7 +890,13 @@ const FoodTicketItem = ({
   );
 };
 
-export function Tickets({}) {
+export function Tickets({
+  products,
+  accessToken,
+}: {
+  products: Product[];
+  accessToken: string;
+}) {
   const { _ } = useLingui();
   const t = useTheme();
   const [selectedTicketType, setSelectedTicketType] =
@@ -829,6 +909,76 @@ export function Tickets({}) {
     { id: 5, type: "partner", label: _(msg`Partner`) },
   ];
 
+  const groupedProductsByTableData = React.useMemo(() => {
+    if (!products.length) return [];
+
+    // First, group by request.id
+    const groupedByRequest = products.reduce((requestAcc, product) => {
+      const requestId = product.request.id;
+      const tableName = product.request.table.name;
+      const zoneName = product.request.table.zone.name;
+
+      if (!requestAcc.has(requestId)) {
+        requestAcc.set(requestId, {
+          requestId,
+          tableName,
+          zoneName,
+          createdAt: product.createdAt, // Adding createdAt for sorting if needed
+          products: new Map<string, GroupProduct>(),
+        });
+      }
+
+      const requestGroup = requestAcc.get(requestId);
+
+      // Then group by productId within each request
+      if (!requestGroup.products.has(product.productId)) {
+        requestGroup.products.set(product.productId, {
+          productId: product.productId,
+          productName: product.productName,
+          totalQuantity: 0,
+          items: new Map<
+            string,
+            {
+              note: string | null;
+              quantity: number;
+              products: Product[];
+            }
+          >(),
+        });
+      }
+
+      const productGroup = requestGroup.products.get(product.productId);
+      productGroup.totalQuantity += product.quantity;
+
+      // Group items by note within each product
+      const noteKey = product.note || "no-note";
+      if (!productGroup.items.has(noteKey)) {
+        productGroup.items.set(noteKey, {
+          note: product.note,
+          quantity: 0,
+          products: [],
+        });
+      }
+
+      const noteGroup = productGroup.items.get(noteKey);
+      noteGroup.quantity += product.quantity;
+      noteGroup.products.push(product);
+
+      return requestAcc;
+    }, new Map());
+
+    // Convert the nested Maps to arrays for easier rendering
+    return Array.from(groupedByRequest.values()).map((requestGroup) => ({
+      ...requestGroup,
+      products: Array.from(requestGroup.products.values()).map(
+        (productGroup) => ({
+          ...productGroup,
+          items: Array.from(productGroup.items.values()),
+        })
+      ),
+    }));
+  }, [products]);
+  console.log(groupedProductsByTableData, "groupedProductsByTableData");
   const filteredData = React.useMemo(() => {
     if (selectedTicketType === "all") {
       return data;
@@ -856,19 +1006,7 @@ export function Tickets({}) {
   const SIDE_BAR_SIZE = 140;
   return (
     <View style={[atoms.flex_1, atoms.flex_row]}>
-      <FAB
-        testID="orientationFAB"
-        onPress={() => {
-          changeScreenOrientation();
-        }}
-        icon={
-          <Reload_Stroke2_Corner0_Rounded size="lg" fill={t.palette.white} />
-        }
-        accessibilityRole="button"
-        accessibilityLabel={_(msg`New chat`)}
-        accessibilityHint=""
-      />
-      <View
+      {/* <View
         style={[
           {
             height: "100%",
@@ -935,7 +1073,7 @@ export function Tickets({}) {
             );
           })}
         </ScrollView>
-      </View>
+      </View> */}
       <View style={[atoms.flex_1, { backgroundColor: "#E7EAFE" }]}>
         <ScrollView
           horizontal={true}
@@ -952,15 +1090,21 @@ export function Tickets({}) {
             },
           ]}
         >
-          {filteredData.map((item, index) => (
-            <TicketItem
-              item={item}
-              totalItems={filteredData.length}
-              index={index}
-              key={item.id}
-            />
-          ))}
+          {groupedProductsByTableData.map(
+            (item: GroupedProductsByTable, index) => (
+              <TicketItem
+                item={item}
+                totalItems={filteredData.length}
+                index={index}
+                key={item.tableId}
+                accessToken={accessToken}
+              />
+            )
+          )}
         </ScrollView>
+        <View
+        style={[atoms.absolute,]}
+        ></View>
       </View>
     </View>
   );
@@ -970,10 +1114,12 @@ export function TicketItem({
   item,
   index,
   totalItems,
+  accessToken,
 }: {
-  item: Ticket;
+  item: GroupedProductsByTable;
   index: number;
   totalItems: number;
+  accessToken: string;
 }) {
   const { _ } = useLingui();
   const t = useTheme();
@@ -982,29 +1128,31 @@ export function TicketItem({
 
   const [ticketSumaryModalVisibility, setTicketSumaryModalVisibility] =
     React.useState(false);
-  const totalFoodItems = React.useMemo(() => {
-    return item.foodItem.reduce((acc, curr) => acc + curr.quantities, 0);
-  }, [item]);
   const timeAgo = React.useMemo(() => {
+    const createdAt = item.products[0]?.items[0]?.products[0]?.createdAt;
     //item.createdAt
-    return formatDistanceToNow(new Date(), {
+    return formatDistanceToNow(createdAt ? new Date(createdAt) : new Date(), {
       addSuffix: true,
       locale: dateFnsLocale,
     });
-  }, [item.createdAt, dateFnsLocale]);
+  }, [item.products, dateFnsLocale]);
   const renderTicketFooter = (enableRowActions = false) => {
     return (
       <List
         layout={LinearTransition.duration(300)}
         itemLayoutAnimation={LinearTransition.duration(300)}
         // CellRendererComponent={<Animated.View></Animated.View>}
-        data={item.foodItem}
-        style={{ maxHeight: 300 }}
-        ItemSeparatorComponent={() => <Divider />}
-        renderItem={({ item: foodItem }) => (
+        data={item.products}
+        style={{ maxHeight: 400 }}
+        ItemSeparatorComponent={() => (
+          <Divider style={[{ borderTopWidth: 2 }]} />
+        )}
+        renderItem={({ item: foodItem, index }) => (
           <TickerFooterItem
             item={foodItem}
             enableRowActions={enableRowActions}
+            foodTicketIndex={index}
+            accessToken={accessToken}
           />
         )}
       />
@@ -1182,7 +1330,7 @@ export function TicketItem({
       />
       <TouchableOpacity
         style={[atoms.flex_row, atoms.align_start]}
-        onPress={() => setTicketSumaryModalVisibility(true)}
+        // onPress={() => setTicketSumaryModalVisibility(true)}
       >
         <View
           style={[
@@ -1225,7 +1373,9 @@ export function TicketItem({
           ]}
         >
           <View style={[atoms.gap_xs]}>
-            <Text style={[atoms.text_lg]}>{item.name}</Text>
+            <Text style={[atoms.text_lg]}>{`Phiếu yêu cầu gọi món - ${
+              item.tableName
+            }`}</Text>
             <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
               <Clock_Stroke2_Corner0_Rounded />
               <View style={[atoms.flex_wrap]}>
@@ -1235,8 +1385,15 @@ export function TicketItem({
               </View>
             </View>
           </View>
-          <Button
-            onPress={() => {}}
+          {/* <Button
+            onPress={() => {
+              const allProducts = foodItem.items.reduce<Product[]>(
+                (acc, item) => {
+                  return [...acc, ...item.products];
+                },
+                []
+              );
+            }}
             accessibilityHint={_(msg`Serve all`)}
             accessibilityLabel={_(msg`Serve all`)}
             variant="solid"
@@ -1247,21 +1404,25 @@ export function TicketItem({
             <ButtonText>
               <Trans>Serve all</Trans>
             </ButtonText>
-          </Button>
+          </Button> */}
         </View>
       </TouchableOpacity>
       <Divider />
       <View style={[atoms.px_md, atoms.py_sm]}>{renderTicketFooter()}</View>
-      {renderTicketSumaryModal}
+      {/* {renderTicketSumaryModal} */}
     </Animated.View>
   );
 }
 const TickerFooterItem = ({
   item: foodItem,
   enableRowActions = false,
+  foodTicketIndex,
+  accessToken,
 }: {
-  item: FoodItem;
+  item: GroupProduct;
   enableRowActions?: boolean;
+  foodTicketIndex: number;
+  accessToken: string;
 }) => {
   const t = useTheme();
   const { _ } = useLingui();
@@ -1271,117 +1432,229 @@ const TickerFooterItem = ({
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      display: withTiming(isExpandedShareValue.value ? "flex" : "none", {
-        duration: 200,
-      }),
+      display: isExpandedShareValue.value ? "flex" : "none",
     };
   });
 
-  return (
-    <View style={[atoms.gap_md, atoms.py_md, atoms.flex_1]}>
-      <View
-        style={[
-          atoms.flex_row,
-          atoms.gap_lg,
-          atoms.justify_between,
-          atoms.flex_1,
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            atoms.flex_row,
-            atoms.gap_md,
-            atoms.rounded_full,
-            atoms.flex_1,
-            atoms.pr_sm,
-            {
-              backgroundColor: "#F3F8FF",
-            },
-          ]}
-          onPress={() => {
-            isExpandedShareValue.value = !isExpandedShareValue.value;
-          }}
-        >
+  const queryClient = useQueryClient();
+  const { mutate: updateProductStatus } = useMutation({
+    mutationKey: ["updateProductsStatus"],
+    mutationFn: ({
+      productIds,
+      status,
+    }: {
+      productIds: string[];
+      status: string;
+    }) =>
+      productService.updateProductsStatus({
+        productIds,
+        status: "COMPLETED",
+        accessToken: accessToken,
+      }),
+    onSuccess: (data) => {
+      if (data && data.status === "success") {
+        // Toast.show("Đã thực hiện", "success");
+      }
+    },
+    onError: (e) => {
+      console.log(e, "error");
+    },
+  });
+
+  const handleRemoveProduct = (products: Product[]) => {
+    updateProductStatus({
+      productIds: products.map((product) => product.id),
+      status: "COMPLETED",
+      accessToken: accessToken,
+    });
+    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+      if (!old) return old;
+      const newProducts = old.data.filter(
+        (product) => !products.find((p) => p.id === product.id)
+      );
+      return {
+        ...old,
+        data: newProducts,
+      };
+    });
+  };
+  const QUANTITY_BOX_SIZE = 45;
+  const renderProductDetail = useMemo(() => {
+    return foodItem.items.map((product, productIndex) => {
+      const isLast = productIndex === foodItem.items.length - 1;
+      return (
+        <View key={`${product.note}-${productIndex}`} style={[atoms.flex_1]}>
           <View
             style={[
-              [
-                atoms.align_center,
-                atoms.justify_center,
-                atoms.rounded_xs,
-                { width: 38, height: 38, backgroundColor: "#D9EDFE" },
-              ],
+              atoms.flex_row,
+              atoms.align_center,
+              atoms.justify_center,
+              atoms.gap_md,
             ]}
           >
-            <Text style={[atoms.text_md]}>{foodItem.quantities}</Text>
-          </View>
-          <View style={[atoms.justify_center]}>
-            <Text style={[atoms.font_bold, atoms.text_lg]}>
-              {foodItem.name}
-            </Text>
-          </View>
-        </TouchableOpacity>
+            <View
+              style={[
+                {},
+                t.atoms.border_contrast_high,
+                atoms.flex_1,
+                atoms.flex_row,
+                atoms.justify_between,
+                atoms.align_center,
+                atoms.py_xl,
+              ]}
+            >
+              <View style={[atoms.gap_md, atoms.flex_1]}>
+                <Text
+                  style={[
+                    {
+                      fontSize: atoms.text_md.fontSize,
+                    },
+                  ]}
+                >
+                  - {foodItem.productName}
+                </Text>
 
-        {enableRowActions && (
-          <View style={[atoms.gap_md, atoms.flex_row]}>
-            <Button
-              label={_(msg`Go back`)}
-              size="small"
-              variant="solid"
-              color="negative"
-              shape="square"
-              onPress={() => {}}
-              hitSlop={HITSLOP_30}
-            >
-              <ButtonIcon icon={Close_Stroke2_Corner0_Rounded} size="xl" />
-            </Button>
-            <Button
-              label={_(msg`Go back`)}
-              size="small"
-              variant="solid"
-              color="primary"
-              shape="square"
-              onPress={() => {}}
-              hitSlop={HITSLOP_30}
-            >
-              <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
-            </Button>
+                {product.note && (
+                  <RNText
+                    style={[
+                      atoms.italic,
+                      atoms.ml_lg,
+                      {
+                        color: t.palette.primary_500,
+                        fontSize: atoms.text_sm.fontSize,
+                        flexWrap: "wrap",
+                        flexShrink: 1,
+                        maxWidth: "65%",
+                        overflow: "hidden",
+                      },
+                    ]}
+                  >
+                    {product.note}
+                  </RNText>
+                )}
+                <Text
+                  style={[
+                    {
+                      fontSize: atoms.text_md.fontSize,
+                    },
+                  ]}
+                >
+                  <Trans>Qty</Trans>: {product.quantity}
+                </Text>
+              </View>
+              <View style={[atoms.gap_md, atoms.flex_row, atoms.align_center]}>
+                <Button
+                  label={_(msg`Go back`)}
+                  size="large"
+                  variant="solid"
+                  color="primary"
+                  shape="square"
+                  onPress={() => {
+                    handleRemoveProduct(product.products);
+                  }}
+                  hitSlop={HITSLOP_30}
+                >
+                  <ButtonIcon icon={ServeIcon} size="xl" />
+                </Button>
+                {/* {product.quantity > 1 && (
+                  <Button
+                    label={_(msg`Go back`)}
+                    size="large"
+                    variant="solid"
+                    color="secondary"
+                    shape="square"
+                    onPress={() => {
+                      setSelectedProduct(product);
+                    }}
+                    hitSlop={HITSLOP_30}
+                  >
+                    <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
+                  </Button>
+                )} */}
+                <Button
+                  label={_(msg`Go back`)}
+                  size="large"
+                  variant="solid"
+                  color="negative"
+                  shape="square"
+                  onPress={() => {
+                    Alert.alert("Huỷ yêu cầu", "Bạn có muốn huỷ yêu cầu này?", [
+                      {
+                        text: "Huỷ",
+                        onPress: () => {},
+                        style: "cancel",
+                      },
+                      {
+                        text: "Đồng ý",
+                        onPress: () => handleRemoveProduct(product.products),
+                      },
+                    ]);
+                  }}
+                  hitSlop={HITSLOP_30}
+                >
+                  <ButtonIcon icon={Close_Stroke2_Corner0_Rounded} size="2xl" />
+                </Button>
+              </View>
+            </View>
           </View>
-        )}
-      </View>
-      <Animated.View
-        entering={FadeInUp.duration(200)}
-        exiting={FadeOutUp.duration(200)}
-        style={[atoms.flex_row, atoms.gap_md, atoms.z_10, animatedStyle]}
+        </View>
+      );
+    });
+  }, [foodItem, fontScale]);
+  return (
+    <View style={[atoms.gap_md, atoms.py_md, atoms.flex_1]}>
+      <TouchableOpacity
+        style={[
+          atoms.flex_row,
+          atoms.gap_md,
+          atoms.rounded_full,
+          atoms.pr_sm,
+          {
+            width: "100%",
+          },
+          atoms.align_center,
+        ]}
+        onPress={() => {
+          isExpandedShareValue.value = !isExpandedShareValue.value;
+        }}
       >
         <View
           style={[
             [
-              atoms.border,
               atoms.align_center,
               atoms.justify_center,
               atoms.rounded_xs,
-              t.atoms.border_contrast_high,
               {
-                width: 35 * fontScale * (fontScale > 2 ? 0.3 : 1),
-                height: 35 * fontScale * (fontScale > 2 ? 0.3 : 1),
+                width: QUANTITY_BOX_SIZE,
+                height: QUANTITY_BOX_SIZE,
+                backgroundColor: "#D9EDFE",
               },
             ],
           ]}
         >
-          <Text style={[]}>{foodItem.quantities}</Text>
+          <Text style={[atoms.text_md]}>{foodTicketIndex + 1}</Text>
         </View>
-        <View>
-          <View style={[{ height: 35 }, atoms.justify_center]}>
-            <Text style={[atoms.text_md]}>
-              <Trans>Normal price</Trans>
+        <View
+          style={[
+            atoms.flex_row,
+            atoms.flex_1,
+            atoms.flex_wrap,
+            atoms.align_center,
+            atoms.gap_md,
+            atoms.justify_between,
+          ]}
+        >
+          <Text numberOfLines={2} style={[atoms.font_bold, atoms.text_lg]}>
+            {foodItem.productName}
+          </Text>
+          <View style={[atoms.flex_row, atoms.align_center, atoms.gap_md]}>
+            <Text style={[atoms.font_bold, atoms.text_lg]}>
+              <Trans>Qty</Trans>:{` ${foodItem.totalQuantity}`}
             </Text>
           </View>
-          <Text style={[atoms.text_md]}>
-            <Trans>Qty</Trans>: {foodItem.quantities}{" "}
-            {foodItem.unitType === "glass" ? _(msg`Glass`) : _(msg`Piece`)}
-          </Text>
         </View>
-      </Animated.View>
+      </TouchableOpacity>
+      <Animated.View>{renderProductDetail}</Animated.View>
     </View>
   );
 };
@@ -1404,6 +1677,12 @@ export const ServeQuantityModal = ({
 
   const [quantity, setQuantity] = React.useState("0");
 
+  useEffect(() => {
+    if (!visible) {
+      resetQuantity();
+    }
+  }, [visible]);
+
   const resetQuantity = () => {
     setQuantity("0");
   };
@@ -1423,6 +1702,32 @@ export const ServeQuantityModal = ({
       return;
     }
     setQuantity(quantity + number);
+  };
+  const queryClient = useQueryClient();
+  const handleServeProduct = () => {
+    if (!product || product.products.length < Number(quantity)) {
+      onClose();
+      return;
+    }
+    const productsToRemove = product.products.slice(-quantity);
+    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+      if (!old) return old;
+
+      // Filter out the removed products
+      const newProducts = old.data.filter(
+        (p) =>
+          !productsToRemove.find((removedProduct) => removedProduct.id === p.id)
+      );
+
+      return {
+        ...old,
+        data: newProducts,
+        totalItems: newProducts.length,
+      };
+    });
+
+    // Close the modal
+    onClose();
   };
 
   return (
@@ -1627,6 +1932,9 @@ export const ServeQuantityModal = ({
                         backgroundColor: t.palette.primary_500,
                       },
                     ]}
+                    onPress={() => {
+                      handleServeProduct();
+                    }}
                   >
                     <Text
                       style={[

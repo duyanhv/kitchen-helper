@@ -749,6 +749,7 @@ export function ButtonIcon({
         <Comp
           width={iconSize}
           height={iconSize}
+          fill={textStyles.color}
           style={[
             {
               color: textStyles.color,

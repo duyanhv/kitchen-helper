@@ -3,21 +3,22 @@ import {
   HomeTabNavigatorParams,
   NativeStackScreenProps,
 } from "@/lib/routes/types";
-
+import NotificationListener from "../../../modules/notification-listener";
 import * as Layout from "@/components/Layout";
 import { Trans } from "@lingui/react/macro";
 import { ScrollView } from "@/view/com/util/Views";
 import { atoms, useTheme } from "@/alf";
-import { View } from "react-native";
+import { TextInput, View } from "react-native";
 import { Image } from "expo-image";
-import { Text } from "@/components/Typography";
-import { useState } from "react";
+import { P, Text } from "@/components/Typography";
+import { useEffect, useState } from "react";
 import { TouchableOpacity } from "@discord/bottom-sheet";
-import { Button, ButtonIcon } from "@/components/Button";
+import { Button, ButtonIcon, ButtonText } from "@/components/Button";
 import { PlusLarge_Stroke2_Corner0_Rounded as Plus } from "@/components/icons/Plus";
 import { SubtractIcon as Subtract } from "@/components/icons/Subtract";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import * as Speech from "expo-speech";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -27,9 +28,118 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React from "react";
-
+import { List } from "@/view/com/util/List";
+export interface NotificationData {
+  packageName: string;
+  postTime: number;
+  key: string;
+  id: number;
+  tag: string | null;
+  groupKey: string | null;
+  overrideGroupKey: string | null;
+  userId: number;
+  isOngoing: boolean;
+  isClearable: boolean;
+  title: string | null;
+  text: string | null;
+  subText: string | null;
+  summaryText: string | null;
+  infoText: string | null;
+  bigText: string | null;
+  when: number;
+  number: number;
+  flags: number;
+  priority: number;
+  category: string | null;
+  channelId: string;
+  tickerText: string | null;
+  contentIntent: boolean;
+  deleteIntent: boolean;
+  fullScreenIntent: boolean;
+  actionCount: number;
+  sender: string | null;
+  messages: number | null;
+  isGroupSummary: boolean;
+}
 type Props = NativeStackScreenProps<HomeTabNavigatorParams, "Home">;
 export function HomeScreen({}: Props) {
+  const speakNumber = async (num: number) => {
+    const text = numberToVietnamese(num);
+    await Speech.speak(text, {
+      language: "vi",
+      pitch: 1.0,
+      rate: 0.9,
+    });
+  };
+
+  const speakCurrency = async (amount: number) => {
+    const text = currencyToVietnamese(amount);
+    await Speech.speak(`Đã nhận được ${text}`, {
+      language: "vi",
+      pitch: 1.0,
+      rate: 0.9,
+    });
+  };
+
+  const speakTime = async (date: Date) => {
+    const text = timeToVietnamese(date.getHours(), date.getMinutes());
+    await Speech.speak(text, {
+      language: "vi",
+      pitch: 1.0,
+      rate: 0.9,
+    });
+  };
+
+  const speakDate = async (date: Date) => {
+    const text = dateToVietnamese(date);
+    await Speech.speak(text, {
+      language: "vi",
+      pitch: 1.0,
+      rate: 0.9,
+    });
+  };
+  const [listNotification, setListNofification] = useState<NotificationData[]>(
+    []
+  );
+  useEffect(() => {
+    // Check notification permission when component mounts
+    async function checkNotificationPermission() {
+      const isEnabled =
+        await NotificationListener.isNotificationServiceEnabled();
+      if (!isEnabled) {
+        // If not enabled, open settings
+        await NotificationListener.openNotificationSettings();
+      } else {
+        // If enabled, start listening
+        await NotificationListener.startListening();
+      }
+    }
+    checkNotificationPermission();
+
+    // Set up notification listener
+    const subscription = NotificationListener.addListener(
+      "onNotificationReceived",
+      (event) => {
+        console.log("Received notification:", event.notification);
+        try {
+          if (event?.notification) {
+            const notificationObj = JSON.parse(
+              event.notification
+            ) as NotificationData;
+            setListNofification((prev) => [...prev, notificationObj]);
+          }
+        } catch (error) {
+          console.error("Error parsing notification:", error);
+        }
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+  const [text, setText] = useState("500000");
+  const { _ } = useLingui();
   return (
     <Layout.Screen>
       <Layout.Header.Outer>
@@ -39,270 +149,155 @@ export function HomeScreen({}: Props) {
           </Layout.Header.TitleText>
         </Layout.Header.Content>
       </Layout.Header.Outer>
-      <OrderItem />
+
+      <List
+        data={listNotification}
+        style={[atoms.flex_1, {}]}
+        ItemSeparatorComponent={() => (
+          <View style={[atoms.border_b, atoms.my_md]} />
+        )}
+        ListEmptyComponent={
+          <View
+            style={[atoms.flex_1, atoms.align_center, atoms.justify_center]}
+          >
+            <Text style={[atoms.text_xl]}>Gửi thông báo</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <View style={[atoms.flex_1, atoms.gap_md]}>
+            <Text style={[]}>title: {item.title}</Text>
+            <Text style={[]}>text: {item.text}</Text>
+            <Text style={[]}>subText: {item.subText}</Text>
+            <Text style={[]}>packageName: {item.packageName}</Text>
+          </View>
+        )}
+      />
+      <TextInput
+        defaultValue={text}
+        onChangeText={setText}
+        style={[
+          atoms.border,
+          atoms.text_md,
+          atoms.py_md,
+          atoms.px_md,
+          atoms.rounded_md,
+          atoms.m_md,
+        ]}
+      />
+
+      <Button
+        onPress={() => {
+          speakCurrency(text);
+        }}
+        accessibilityHint={_(msg`Serve all`)}
+        accessibilityLabel={_(msg`Serve all`)}
+        variant="solid"
+        color="primary"
+        label={_(msg`Serve all`)}
+        size="large"
+      >
+        <ButtonText>
+          <Trans>Speak</Trans>
+        </ButtonText>
+      </Button>
     </Layout.Screen>
   );
 }
-
-export function OrderItem() {
-  const insets = useSafeAreaInsets();
-  const [orderItems, setOrderItems] = useState<{ id: number; total: number }[]>(
-    []
-  );
-  const addItem = ({ id, total }: { id: number; total: number }) => {
-    const existingItem = orderItems.find((item) => item.id === id);
-    if (existingItem?.total === 20) {
-      return;
-    }
-    if (existingItem) {
-      // Update existing item
-      setOrderItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, total: item.total + total } : item
-        )
-      );
-    } else {
-      // Add new item
-      setOrderItems((prev) => [...prev, { id, total }]);
-    }
-  };
-  const removeItem = ({ id, total }: { id: number; total: number }) => {
-    const existingItem = orderItems.find((item) => item.id === id);
-
-    if (existingItem) {
-      if (existingItem.total === 1) {
-        setOrderItems((prev) => prev.filter((item) => item.id !== id));
-      } else {
-        setOrderItems((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, total: item.total - total } : item
-          )
-        );
-      }
-    }
-  };
-
-  const getItemById = (id: number) => orderItems.find((item) => item.id === id);
-
-  const t = useTheme();
-  const basketLabel = React.useMemo(() => {
-    const result = {
-      items: 0,
-      price: 0,
-    };
-    if (orderItems.length === 0) {
-      result;
-    }
-
-    orderItems.forEach((item) => {
-      const itemDetail = FOOD_ITEMS.find((foodItem) => foodItem.id === item.id);
-      result.items += item.total;
-      result.price += item.total * (itemDetail?.price ?? 0);
-    });
-    return result;
-  }, [orderItems]);
-  return (
-    <View style={[atoms.flex_1]}>
-      <ScrollView
-        contentContainerStyle={[
-          atoms.flex_wrap,
-          atoms.flex_row,
-          atoms.gap_md,
-          atoms.justify_center,
-          atoms.align_start,
-          {
-            paddingTop: 30,
-            paddingBottom: 100
-          },
-        ]}
-      >
-        {FOOD_ITEMS.map((item) => (
-          <FoodItem
-            key={item.id}
-            item={item}
-            total={getItemById(item.id)?.total}
-            onAddItem={(id) => addItem({ id, total: 1 })}
-            onRemoveItem={(id) => removeItem({ id, total: 1 })}
-          />
-        ))}
-      </ScrollView>
-      {orderItems.length > 0 && (
-        <Animated.View
-          entering={FadeInDown.duration(200)}
-          exiting={FadeOutDown.duration(200)}
-          style={[
-            atoms.absolute,
-            atoms.rounded_md,
-            atoms.px_md,
-            atoms.py_md,
-            atoms.flex_row,
-            atoms.justify_between,
-            {
-              bottom: insets.bottom + 80,
-              // width: "90%",
-              backgroundColor: t.palette.primary_500,
-              left: 30,
-              right: 30,
-            },
-          ]}
-        >
-          <View style={[atoms.flex_row, atoms.gap_xs]}>
-            <Text
-              style={[t.atoms.text_inverted, atoms.text_lg, atoms.font_bold]}
-            >
-              <Trans>Basket</Trans>
-            </Text>
-            <Text style={[t.atoms.text_inverted, atoms.text_lg]}>•</Text>
-            <Text style={[t.atoms.text_inverted, atoms.text_lg]}>
-              {`${basketLabel.items} `}
-              <Trans>Items</Trans>
-            </Text>
-          </View>
-          <View>
-            <Text
-              style={[t.atoms.text_inverted, atoms.text_lg, atoms.font_bold]}
-            >
-              {`${basketLabel.price}`}đ
-            </Text>
-          </View>
-        </Animated.View>
-      )}
-    </View>
-  );
-}
-type FoodItemProps = {
-  item: {
-    id: number;
-    name: string;
-    price: number;
-    image: string;
-  };
-  total?: number;
-  onAddItem: (id: number) => void;
-  onRemoveItem: (id: number) => void;
-};
-function FoodItem({ item, onAddItem, total, onRemoveItem }: FoodItemProps) {
-  const { _ } = useLingui();
-  const t = useTheme();
-  return (
-    <View style={[]}>
-      <View>
-        <Image
-          source={{ uri: item.image }}
-          style={[atoms.rounded_md, { aspectRatio: 1, width: 170 }]}
-          contentFit="cover"
-        />
-        <Animated.View
-          entering={FadeIn}
-          exiting={FadeOut}
-          layout={LinearTransition}
-          style={[
-            atoms.absolute,
-            atoms.flex_row,
-            atoms.rounded_full,
-            atoms.border,
-            {
-              borderColor: t.palette.primary_500,
-              backgroundColor: "#fff",
-              bottom: 5,
-              right: 5,
-            },
-          ]}
-        >
-          {total && (
-            <Animated.View
-              entering={FadeIn.duration(200)}
-              exiting={FadeOut.duration(200)}
-              layout={LinearTransition}
-              style={[atoms.flex_row]}
-            >
-              <TouchableOpacity
-                onPress={() => onRemoveItem(item.id)}
-                style={[
-                  atoms.justify_center,
-                  atoms.align_center,
-                  {
-                    width: 30,
-                    height: 30,
-                  },
-                ]}
-              >
-                <Subtract />
-              </TouchableOpacity>
-              <View
-                style={[
-                  atoms.align_center,
-                  atoms.justify_center,
-                  { width: 25 },
-                ]}
-              >
-                <Text style={[atoms.text_xl]}>{total}</Text>
-              </View>
-            </Animated.View>
-          )}
-          <Animated.View layout={LinearTransition}>
-            <TouchableOpacity
-              onPress={() => onAddItem(item.id)}
-              style={[
-                atoms.justify_center,
-                atoms.align_center,
-                {
-                  width: 30,
-                  height: 30,
-                },
-              ]}
-            >
-              <Plus size="sm" />
-            </TouchableOpacity>
-          </Animated.View>
-        </Animated.View>
-      </View>
-      <Text>{item.name}</Text>
-      <Text style={[atoms.font_bold]}>{item.price}đ</Text>
-    </View>
-  );
-}
-const FOOD_ITEMS = [
-  {
-    id: 1,
-    name: "Ô Long Nhài Sữa",
-    price: 10000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
-  {
-    id: 2,
-    name: "Ô Long Nhài Sữa 2",
-    price: 20000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
-  {
-    id: 3,
-    name: "Ô Long Nhài Sữa 3",
-    price: 10000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
-  {
-    id: 4,
-    name: "Ô Long Nhài Sữa 4",
-    price: 10000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
-  {
-    id: 5,
-    name: "Ô Long Nhài Sữa 5",
-    price: 10000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
-  {
-    id: 6,
-    name: "Ô Long Nhài Sữa 6",
-    price: 102000,
-    image:
-      "https://mms.img.susercontent.com/vn-11134517-7r98o-lr4jda3150w4d9@resize_ss400x400!@crop_w400_h400_cT",
-  },
+const units = [
+  "",
+  "một",
+  "hai",
+  "ba",
+  "bốn",
+  "năm",
+  "sáu",
+  "bảy",
+  "tám",
+  "chín",
 ];
+const positions = ["", "mươi", "trăm", "nghìn", "triệu", "tỷ"];
+
+function readThreeDigits(num: number): string {
+  const hundreds = Math.floor(num / 100);
+  const tens = Math.floor((num % 100) / 10);
+  const ones = num % 10;
+
+  let result = "";
+
+  // Handle hundreds
+  if (hundreds > 0) {
+    result += `${units[hundreds]} ${positions[2]} `;
+  }
+
+  // Handle tens
+  if (tens > 0) {
+    if (tens === 1) {
+      result += "mười ";
+    } else {
+      result += `${units[tens]} ${positions[1]} `;
+    }
+  }
+
+  // Handle ones
+  if (ones > 0) {
+    if (tens === 0 && hundreds > 0) {
+      result += "lẻ ";
+    }
+    if (ones === 1 && tens > 1) {
+      result += "mốt ";
+    } else if (ones === 5 && tens > 0) {
+      result += "lăm ";
+    } else {
+      result += `${units[ones]} `;
+    }
+  }
+
+  return result;
+}
+
+export function numberToVietnamese(num: number): string {
+  if (num === 0) return "không";
+  if (num < 0) return "âm " + numberToVietnamese(Math.abs(num));
+
+  const billions = Math.floor(num / 1000000000);
+  const millions = Math.floor((num % 1000000000) / 1000000);
+  const thousands = Math.floor((num % 1000000) / 1000);
+  const remainder = num % 1000;
+
+  let result = "";
+
+  if (billions > 0) {
+    result += readThreeDigits(billions) + positions[5] + " ";
+  }
+
+  if (millions > 0) {
+    result += readThreeDigits(millions) + positions[4] + " ";
+  }
+
+  if (thousands > 0) {
+    result += readThreeDigits(thousands) + positions[3] + " ";
+  }
+
+  if (remainder > 0) {
+    result += readThreeDigits(remainder);
+  }
+
+  return result.trim();
+}
+
+// Function to format currency
+export function currencyToVietnamese(amount: number): string {
+  return `${numberToVietnamese(amount)} đồng`;
+}
+
+// Function to format time
+export function timeToVietnamese(hours: number, minutes: number): string {
+  return `${numberToVietnamese(hours)} giờ ${numberToVietnamese(minutes)} phút`;
+}
+
+// Function to format date
+export function dateToVietnamese(date: Date): string {
+  return `ngày ${numberToVietnamese(date.getDate())} tháng ${numberToVietnamese(
+    date.getMonth() + 1
+  )} năm ${numberToVietnamese(date.getFullYear())}`;
+}

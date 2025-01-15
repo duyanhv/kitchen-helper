@@ -36,7 +36,7 @@ msgstr ""
 #: src/view/shell/bottom-bar/BottomBar.tsx:137
 #: src/screens/Home/Home.tsx:38
 msgid "Home"
-msgstr "Đặt món"
+msgstr "Đọc thông báo đến"
 
 #: src/screens/Home/Home.tsx:158
 msgid "Items"

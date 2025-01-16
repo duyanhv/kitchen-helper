@@ -7,7 +7,7 @@ import { useFontScale } from "@/state/preferences/font-scale";
 import { Alert } from "react-native";
 import { useAssets } from "expo-asset";
 import { Audio } from "expo-av";
-
+import productData from "./productsData.json";
 export const PATH = {
   BASE_URL: "https://menu.1erp.vn",
   AUTH: {
@@ -49,11 +49,11 @@ const updateProductsStatus = async ({
 export const useProducts = (accessToken?: string) => {
   return useQuery<ProductList>({
     queryKey: ["requestProduct"],
-    queryFn: () =>
-      productService.requestProduct({
-        verifyToken: accessToken!,
-      }),
-    enabled: !!accessToken, // Only run query when we have an accessToken
+    queryFn: () => {
+      return {
+        data: productData,
+      };
+    },
   });
 };
 export const useGetRealTimeProducts = (accessToken: string) => {

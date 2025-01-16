@@ -42,6 +42,7 @@ import Animated, {
   StretchOutY,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import React from "react";
@@ -81,69 +82,21 @@ import { useFontScale } from "@/state/preferences/font-scale";
 import { fontSize } from "@/alf/tokens";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import ServeIcon from "../../../assets/icons/restaurant-waiter.svg";
+import { Bike_Stroke2_Corner0_Rounded } from "@/components/icons/Bike";
+import { Bag_Stroke2_Corner0_Rounded } from "@/components/icons/Bag";
 
 type Props = NativeStackScreenProps<HomeTabNavigatorParams, "Home">;
 export function HomeScreen({}: Props) {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [sessions, setSessions] = React.useState({
-    accessToken: undefined,
+    accessToken: "",
   });
   const { data: productsData, isLoading: isLoadingProducts } = useProducts(
     sessions.accessToken
   );
 
-  const { emit, socket } = useGetRealTimeProducts(sessions.accessToken);
-
-  const { mutate: chooseStoreMutate, isPending: isChoosingStore } = useMutation(
-    {
-      mutationFn: ({ token, storeId }: { token: string; storeId: string }) =>
-        productService.chooseStore({
-          verifyToken: token,
-          storeId,
-        }),
-      onSuccess: (data) => {
-        if (data && data.accessToken) {
-          setSessions({ accessToken: data.accessToken });
-        }
-      },
-    }
-  );
-  // const { mutate: getRequestProduct, isPending: isGettingRequestProduct } =
-  //   useMutation({
-  //     mutationKey: ["requestProduct"],
-  //     mutationFn: (token: string) =>
-  //       productService.requestProduct({
-  //         verifyToken: token,
-  //       }),
-  //     onSuccess: (data) => {
-  //       setProducts(data.data);
-  //     },
-  //   });
-  const { mutate: loginMutation, isPending: isLoggingin } = useMutation({
-    mutationKey: ["login"],
-    mutationFn: () =>
-      productService.login({
-        username: "example8386",
-        password: "MatKhau@123",
-      }),
-    onSuccess: (data) => {
-      if (data.verifyToken && data.userStores[1]?.storeId) {
-        chooseStoreMutate({
-          token: data.verifyToken,
-          storeId: data.userStores[1]?.storeId,
-        });
-      }
-    },
-    onError: (e) => {
-      console.log(e, "error");
-    },
-  });
-
-  useEffect(() => {
-    loginMutation();
-  }, []);
   const pagerRef = React.useRef<PagerRef>(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(1);
+  const [selectedIndex, setSelectedIndex] = React.useState(0);
   const renderTabBar = React.useCallback((props: RenderTabBarFnProps) => {
     return (
       <HomeHeader
@@ -175,7 +128,6 @@ export function HomeScreen({}: Props) {
       <View key="2" style={[atoms.flex_1]}>
         <FoodTicket
           ticket={data}
-          emit={emit}
           products={productsData?.data || []}
           accessToken={sessions.accessToken}
         />
@@ -187,12 +139,10 @@ export function HomeScreen({}: Props) {
 export function FoodTicket({
   ticket,
   products,
-  emit,
   accessToken,
 }: {
   ticket: Ticket[];
   products: Product[];
-  emit: (event: string, data: any) => void;
   accessToken: string;
 }) {
   console.log(products, "products");
@@ -305,7 +255,6 @@ export function FoodTicket({
             item={foodItem}
             index={index}
             enableRowActions={enableRowActions}
-            emit={emit}
             accessToken={accessToken}
           />
         )}
@@ -373,13 +322,11 @@ const FoodTicketItem = ({
   item: foodItem,
   enableRowActions = false,
   index: foodTicketIndex,
-  emit,
   accessToken,
 }: {
   item: GroupProduct;
   enableRowActions?: boolean;
   index: number;
-  emit: (event: string, data: any) => void;
   accessToken: string;
 }) => {
   const t = useTheme();
@@ -463,12 +410,6 @@ const FoodTicketItem = ({
     }
   };
   const QUANTITY_BOX_SIZE = 45;
-
-  const handleServeProduct = (product: Product) => {
-    emit("request.request-confirm-order", {
-      productId: "heyyyy",
-    });
-  };
 
   function RightAction(prog: SharedValue<number>, drag: SharedValue<number>) {
     const styleAnimation = useAnimatedStyle(() => {
@@ -918,12 +859,16 @@ export function Tickets({
       const requestId = product.request.id;
       const tableName = product.request.table.name;
       const zoneName = product.request.table.zone.name;
+      const type = product.request.type;
+      const order = product.request.order;
 
       if (!requestAcc.has(requestId)) {
         requestAcc.set(requestId, {
           requestId,
           tableName,
           zoneName,
+          type,
+          order,
           createdAt: product.createdAt, // Adding createdAt for sorting if needed
           products: new Map<string, GroupProduct>(),
         });
@@ -1004,6 +949,16 @@ export function Tickets({
         : ScreenOrientation.Orientation.PORTRAIT_UP
     );
   }
+  const scrollX = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: scrollX.value,
+        },
+      ],
+    };
+  });
   const SIDE_BAR_SIZE = 140;
   return (
     <View style={[atoms.flex_1, atoms.flex_row]}>
@@ -1078,6 +1033,10 @@ export function Tickets({
       <View style={[atoms.flex_1, { backgroundColor: "#E7EAFE" }]}>
         <ScrollView
           horizontal={true}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            scrollX.value = event.nativeEvent.contentOffset.x;
+          }}
           contentContainerStyle={[
             atoms.flex_wrap,
             atoms.flex_row,
@@ -1097,20 +1056,203 @@ export function Tickets({
                 item={item}
                 totalItems={filteredData.length}
                 index={index}
-                key={item.tableId}
+                key={`${item.tableId}` + index}
                 accessToken={accessToken}
               />
             )
           )}
         </ScrollView>
         <View
-        style={[atoms.absolute,]}
-        ></View>
+          style={[
+            atoms.absolute,
+            atoms.px_xl,
+            atoms.py_md,
+            {
+              width: "100%",
+              height: 130,
+              pointerEvents: "none",
+
+              bottom: 0,
+            },
+          ]}
+        >
+          <Animated.View
+            style={[
+              atoms.absolute,
+              atoms.rounded_md,
+              animatedStyle,
+              {
+                width: 550,
+                height: 110,
+                bottom: 12,
+                left: 16,
+                zIndex: 10,
+                borderWidth: 2,
+                borderColor: t.palette.primary_500,
+              },
+            ]}
+          />
+          <View
+            style={[
+              atoms.flex_row,
+              atoms.gap_lg,
+              {
+                width: "100%",
+                // height: 150,
+              },
+            ]}
+          >
+            {groupedProductsByTableData.map(
+              (item: GroupedProductsByTable, index) => (
+                <MinimizeTicketItem
+                  item={item}
+                  totalItems={filteredData.length}
+                  index={index}
+                  key={`${item.tableId}` + index}
+                />
+              )
+            )}
+          </View>
+        </View>
       </View>
     </View>
   );
 }
+const getTimeAgo = (date: Date) => {
+  const now = new Date();
+  const diffInMinutes = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60)
+  );
 
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays}d`;
+};
+const MinimizeTicketItem = ({
+  item,
+  index,
+  totalItems,
+}: {
+  item: GroupedProductsByTable;
+  index: number;
+  totalItems: number;
+}) => {
+  const getTitleByRequestType = useMemo(() => {
+    const result = {
+      title: `${item.tableName}`,
+      btnColor: "#0FAB5C",
+      backgroundColor: "#fff",
+    };
+    switch (item.type) {
+      case "DINE_IN":
+        break;
+      case "SHIPPING":
+        result.title = `Order ${item.order}`;
+        result.btnColor = "#0081C4";
+        result.backgroundColor = "#EAF8FE";
+        break;
+      case "TAKE_AWAY":
+        result.title = `Mang về`;
+        result.btnColor = "#FC9157";
+        result.backgroundColor = "#FFF4EB";
+        break;
+      case "PARTNER":
+        result.title = `Đang đặt món - ${item.tableName}`;
+        result.btnColor = "#fff";
+        result.backgroundColor = "#E7EAFE";
+        break;
+    }
+    return result;
+  }, [item.type, item.tableName]);
+
+  const timeAgo = React.useMemo(() => {
+    const createdAt = item.products[0]?.items[0]?.products[0]?.createdAt;
+    if (!createdAt) return "";
+    return getTimeAgo(new Date(createdAt));
+  }, [item.products]);
+  return (
+    <View
+      style={[
+        atoms.rounded_md,
+        {
+          width: 130,
+          height: 100,
+          backgroundColor: getTitleByRequestType.btnColor,
+        },
+      ]}
+    >
+      <View style={[atoms.align_center, atoms.justify_center, atoms.flex_1]}>
+        <Text style={[atoms.text_md, atoms.font_bold, { color: "#fff" }]}>
+          {getTitleByRequestType.title}
+        </Text>
+      </View>
+      <View
+        style={[
+          atoms.flex_2,
+          atoms.flex_row,
+          atoms.align_center,
+          atoms.justify_center,
+          atoms.gap_xs,
+          { backgroundColor: "#fff", margin: 2, borderRadius: 10 },
+        ]}
+      >
+        {item.type === "SHIPPING" ? (
+          <Bike_Stroke2_Corner0_Rounded fill={getTitleByRequestType.btnColor} />
+        ) : item.type === "TAKE_AWAY" ? (
+          <Bag_Stroke2_Corner0_Rounded
+            size="2xl"
+            fill={getTitleByRequestType.btnColor}
+          />
+        ) : (
+          <></>
+        )}
+        <Text style={[atoms.text_md]}>{timeAgo}</Text>
+      </View>
+    </View>
+  );
+};
+
+const useTimeLeft = () => {
+  const [remainingMinutes, setRemainingMinutes] = useState(30);
+  const [targetTime] = useState(new Date(new Date().getTime() + 30 * 60000));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const remaining = Math.max(
+        0,
+        Math.round((targetTime.getTime() - now.getTime()) / 60000)
+      );
+      setRemainingMinutes(remaining);
+    }, 60000);
+
+    // Initial calculation
+    const now = new Date();
+    const remaining = Math.max(
+      0,
+      Math.round((targetTime.getTime() - now.getTime()) / 60000)
+    );
+    setRemainingMinutes(remaining);
+
+    return () => clearInterval(timer);
+  }, [targetTime]);
+
+  const timeString = targetTime.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${timeString} (Còn ${remainingMinutes}')`;
+};
 export function TicketItem({
   item,
   index,
@@ -1131,12 +1273,12 @@ export function TicketItem({
     React.useState(false);
   const timeAgo = React.useMemo(() => {
     const createdAt = item.products[0]?.items[0]?.products[0]?.createdAt;
-    //item.createdAt
-    return formatDistanceToNow(createdAt ? new Date(createdAt) : new Date(), {
-      addSuffix: true,
-      locale: dateFnsLocale,
-    });
-  }, [item.products, dateFnsLocale]);
+    if (!createdAt) return "";
+    return getTimeAgo(new Date(createdAt));
+  }, [item.products]);
+
+  const timeLeft = useTimeLeft();
+
   const renderTicketFooter = (enableRowActions = false) => {
     return (
       <List
@@ -1306,6 +1448,35 @@ export function TicketItem({
       </Modal>
     );
   }, [ticketSumaryModalVisibility]);
+
+  const getTitleByRequestType = useMemo(() => {
+    const result = {
+      title: `${item.tableName}`,
+      btnColor: "#0FAB5C",
+      backgroundColor: "#E8F7EF",
+    };
+    switch (item.type) {
+      case "DINE_IN":
+        break;
+      case "SHIPPING":
+        result.title = `Giao hàng`;
+        result.btnColor = "#0081C4";
+        result.backgroundColor = "#EAF8FE";
+        break;
+      case "TAKE_AWAY":
+        result.title = `Mang về`;
+        result.btnColor = "#FC9157";
+        result.backgroundColor = "#FFF4EB";
+        break;
+      case "PARTNER":
+        result.title = `Đang đặt món - ${item.tableName}`;
+        result.btnColor = "#fff";
+        result.backgroundColor = "#E7EAFE";
+        break;
+    }
+    return result;
+  }, [item.type, item.tableName]);
+
   return (
     <Animated.View
       entering={FadeInDown.duration(200).delay(index * 50)}
@@ -1314,13 +1485,13 @@ export function TicketItem({
       style={[
         atoms.rounded_md,
         {
-          width: 380,
+          // width: 380,
           backgroundColor: "#fff",
           overflow: "hidden",
         },
       ]}
     >
-      <View
+      {/* <View
         style={[
           {
             width: "100%",
@@ -1328,12 +1499,18 @@ export function TicketItem({
             backgroundColor: t.palette.primary_500,
           },
         ]}
-      />
+      /> */}
       <TouchableOpacity
-        style={[atoms.flex_row, atoms.align_start]}
+        style={[
+          atoms.flex_row,
+          atoms.align_start,
+          {
+            backgroundColor: getTitleByRequestType.backgroundColor,
+          },
+        ]}
         // onPress={() => setTicketSumaryModalVisibility(true)}
       >
-        <View
+        {/* <View
           style={[
             atoms.mx_xs,
             // atoms.px_xs,
@@ -1362,7 +1539,7 @@ export function TicketItem({
               borderBottomColor: "#fff",
             }}
           />
-        </View>
+        </View> */}
         <View
           style={[
             atoms.flex_row,
@@ -1374,38 +1551,62 @@ export function TicketItem({
           ]}
         >
           <View style={[atoms.gap_xs]}>
-            <Text style={[atoms.text_lg]}>{`Phiếu yêu cầu gọi món - ${
-              item.tableName
-            }`}</Text>
             <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
-              <Clock_Stroke2_Corner0_Rounded />
-              <View style={[atoms.flex_wrap]}>
-                <Text style={[atoms.text_sm, t.atoms.text_contrast_medium]}>
-                  {timeAgo}
-                </Text>
+              {item.type === "SHIPPING" ? (
+                <Bike_Stroke2_Corner0_Rounded
+                  fill={getTitleByRequestType.btnColor}
+                />
+              ) : item.type === "TAKE_AWAY" ? (
+                <Bag_Stroke2_Corner0_Rounded
+                  fill={getTitleByRequestType.btnColor}
+                />
+              ) : (
+                <></>
+              )}
+              <Text
+                style={[
+                  atoms.text_xl,
+                  atoms.font_bold,
+                  { color: getTitleByRequestType.btnColor },
+                ]}
+              >
+                {getTitleByRequestType.title}
+              </Text>
+            </View>
+            <View style={[atoms.gap_xs]}>
+              <View style={[atoms.flex_row]}>
+                <Text style={[atoms.text_md, atoms.font_bold]}>Order:</Text>
+                <Text style={[atoms.text_md]}> {item.order}</Text>
               </View>
+              {item.type === "SHIPPING" ? (
+                <View style={[atoms.flex_row, atoms.align_center]}>
+                  <Text style={[atoms.text_md, atoms.font_bold]}>
+                    Giờ giao hàng:
+                  </Text>
+                  <Text style={[atoms.text_md]}> {timeLeft}</Text>
+                </View>
+              ) : (
+                <View style={[atoms.flex_row, atoms.align_center]}>
+                  <Clock_Stroke2_Corner0_Rounded />
+                  <Text style={[atoms.text_md]}> {timeAgo}</Text>
+                </View>
+              )}
             </View>
           </View>
-          {/* <Button
-            onPress={() => {
-              const allProducts = foodItem.items.reduce<Product[]>(
-                (acc, item) => {
-                  return [...acc, ...item.products];
-                },
-                []
-              );
-            }}
+          <Button
+            onPress={() => {}}
             accessibilityHint={_(msg`Serve all`)}
             accessibilityLabel={_(msg`Serve all`)}
             variant="solid"
             color="primary"
             label={_(msg`Serve all`)}
             size="large"
+            style={[{ backgroundColor: getTitleByRequestType.btnColor }]}
           >
             <ButtonText>
               <Trans>Serve all</Trans>
             </ButtonText>
-          </Button> */}
+          </Button>
         </View>
       </TouchableOpacity>
       <Divider />
@@ -1463,11 +1664,11 @@ const TickerFooterItem = ({
   });
 
   const handleRemoveProduct = (products: Product[]) => {
-    updateProductStatus({
-      productIds: products.map((product) => product.id),
-      status: "COMPLETED",
-      accessToken: accessToken,
-    });
+    // updateProductStatus({
+    //   productIds: products.map((product) => product.id),
+    //   status: "COMPLETED",
+    //   accessToken: accessToken,
+    // });
     queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
       if (!old) return old;
       const newProducts = old.data.filter(

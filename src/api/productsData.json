@@ -10,6 +10,8 @@
     "status": "PENDING",
     "request": {
       "id": "39913819-9962-4305-b63f-ca792baca24d",
+      "type": "TAKE_AWAY",
+      "order": "1.1",
       "table": {
         "id": "7c7bec81-1d25-406b-a0a2-d523fb0dd00c",
         "name": "11",
@@ -31,6 +33,8 @@
     "status": "PENDING",
     "request": {
       "id": "53ffc4b2-7d2d-4417-97ae-093c85962668",
+      "type": "DINE_IN",
+      "order": "1.2",
       "table": {
         "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
         "name": "Bàn 05",
@@ -52,6 +56,8 @@
     "status": "PENDING",
     "request": {
       "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "type": "DINE_IN",
+      "order": "1.3",
       "table": {
         "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
         "name": "Bàn 05",
@@ -73,6 +79,8 @@
     "status": "PENDING",
     "request": {
       "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "type": "DINE_IN",
+      "order": "1.3",
       "table": {
         "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
         "name": "Bàn 05",
@@ -94,6 +102,8 @@
     "status": "PENDING",
     "request": {
       "id": "35c0a41a-f84e-4143-901f-4648ca0bac8c",
+      "type": "DINE_IN",
+      "order": "1.3",
       "table": {
         "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
         "name": "Bàn 05",
@@ -115,6 +125,8 @@
     "status": "PENDING",
     "request": {
       "id": "f651879e-5718-4c23-bc2d-2e60a54cb68d",
+      "type": "TAKE_AWAY",
+      "order": "1.4",
       "table": {
         "id": "de1b4d4e-5c0c-4be4-9267-ec087437dde5",
         "name": "Bàn 05",

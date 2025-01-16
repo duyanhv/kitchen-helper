@@ -76,8 +76,6 @@ export function HomeScreen({}: Props) {
     const text = currencyToVietnamese(amount);
     await Speech.speak(`Đã nhận được ${text}`, {
       language: "vi",
-      pitch: 1.0,
-      rate: 0.9,
     });
   };
 
@@ -98,6 +96,19 @@ export function HomeScreen({}: Props) {
       rate: 0.9,
     });
   };
+  function extractAmount(text: string): number | null {
+    // Regular expression to match the amount pattern
+    const regex = /Giao dịch: \+?([\d,]+)VND/;
+    const match = text?.match(regex);
+
+    if (match && match[1]) {
+      // Remove commas and convert to number
+      return parseInt(match[1].replace(/,/g, ""));
+    }
+
+    return null;
+  }
+
   const [listNotification, setListNofification] = useState<NotificationData[]>(
     []
   );
@@ -127,6 +138,13 @@ export function HomeScreen({}: Props) {
               event.notification
             ) as NotificationData;
             setListNofification((prev) => [...prev, notificationObj]);
+            //com.vietinbank.ipay
+            if (notificationObj.packageName === "com.vietinbank.ipay") {
+              const amount = extractAmount(notificationObj.text || "");
+              if (amount) {
+                speakCurrency(amount); // This will speak the amount in Vietnamese
+              }
+            }
           }
         } catch (error) {
           console.error("Error parsing notification:", error);

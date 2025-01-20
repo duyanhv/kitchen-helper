@@ -603,7 +603,6 @@ const FoodTicketItem = ({
                     onPress={() => {
                       handleRemoveProduct(product.products);
                     }}
-                    hitSlop={HITSLOP_30}
                   >
                     {/* <ServeIcon /> */}
                     <ButtonIcon icon={ServeIcon} size="xl" />
@@ -618,7 +617,6 @@ const FoodTicketItem = ({
                       onPress={() => {
                         setSelectedProduct(product);
                       }}
-                      hitSlop={HITSLOP_30}
                     >
                       <ButtonIcon icon={ServeIcon} size="xl" />
                     </Button>
@@ -647,7 +645,6 @@ const FoodTicketItem = ({
                         ]
                       );
                     }}
-                    hitSlop={HITSLOP_30}
                   >
                     <ButtonIcon
                       icon={Close_Stroke2_Corner0_Rounded}
@@ -2119,20 +2116,40 @@ export const ServeQuantityModal = ({
   };
   const queryClient = useQueryClient();
   const handleServeProduct = () => {
-    if (!product || product.products.length < Number(quantity)) {
+    const numberOfProducts = !product
+      ? 0
+      : product.products.reduce((p, acc) => acc.quantity, 0);
+    if (!product || numberOfProducts < Number(quantity)) {
       onClose();
       return;
     }
     const productsToRemove = product.products.slice(-quantity);
+
     queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
       if (!old) return old;
-
-      // Filter out the removed products
-      const newProducts = old.data.filter(
-        (p) =>
-          !productsToRemove.find((removedProduct) => removedProduct.id === p.id)
-      );
-
+      let newProducts = [];
+      if (numberOfProducts === Number(quantity)) {
+        newProducts = old.data.filter(
+          (p) =>
+            !productsToRemove.find(
+              (removedProduct) => removedProduct.id === p.id
+            )
+        );
+      } else {
+        newProducts = old.data.map((oldData) => {
+          if (
+            productsToRemove.find(
+              (removedProduct) => removedProduct.id === oldData.id
+            )
+          ) {
+            return {
+              ...oldData,
+              quantity: oldData.quantity - Number(quantity),
+            };
+          }
+          return oldData;
+        });
+      }
       return {
         ...old,
         data: newProducts,

@@ -1,6 +1,6 @@
 module.exports = {
   expo: {
-    name: "kitchen-helper",
+    name: "kitchen-helper2",
     slug: "kitchen-helper",
     version: "1.0.0",
     userInterfaceStyle: "automatic",
@@ -22,7 +22,7 @@ module.exports = {
         backgroundImage: "./assets/icon-android-background.png",
         backgroundColor: "#1185FE",
       },
-      package: "xyz.kitchen_duyanhv.app",
+      package: "xyz.kitchen_duyanhv2.app",
     },
     web: {
       bundler: "metro",

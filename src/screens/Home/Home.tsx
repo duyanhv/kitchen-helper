@@ -12,8 +12,6 @@ import { atoms, useTheme } from "@/alf";
 import * as ScreenOrientation from "expo-screen-orientation";
 import {
   Modal,
-  Pressable,
-  TouchableHighlight,
   TouchableWithoutFeedback,
   View,
   TouchableOpacity,
@@ -29,7 +27,9 @@ import { SubtractIcon as Subtract } from "@/components/icons/Subtract";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import Animated, {
+  cancelAnimation,
   CurvedTransition,
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInUp,
@@ -37,11 +37,14 @@ import Animated, {
   FadeOutDown,
   FadeOutUp,
   LinearTransition,
+  runOnJS,
   SharedValue,
   StretchInY,
   StretchOutY,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -84,6 +87,14 @@ import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import ServeIcon from "../../../assets/icons/restaurant-waiter.svg";
 import { Bike_Stroke2_Corner0_Rounded } from "@/components/icons/Bike";
 import { Bag_Stroke2_Corner0_Rounded } from "@/components/icons/Bag";
+import {
+  Directions,
+  Gesture,
+  GestureDetector,
+  FlatList,
+  TouchableOpacity as GHTouchableOpacity,
+  TouchableWithoutFeedback as GHTouchableWithoutFeedback,
+} from "react-native-gesture-handler";
 
 type Props = NativeStackScreenProps<HomeTabNavigatorParams, "Home">;
 export function HomeScreen({}: Props) {
@@ -843,6 +854,18 @@ export function Tickets({
   const t = useTheme();
   const [selectedTicketType, setSelectedTicketType] =
     React.useState<TicketType>("all");
+
+  const [isEditing, setIsEditing] = useState(false);
+  const { stopShake } = useShakeAnimation();
+  // Add these functions to handle edit mode
+  const startEditing = () => {
+    setIsEditing(true);
+  };
+
+  const stopEditing = () => {
+    setIsEditing(false);
+  };
+
   const LIST_ITEMS = [
     { id: 1, type: "all", label: _(msg`All`) },
     { id: 2, type: "dine-in", label: _(msg`Dine in`) },
@@ -959,162 +982,179 @@ export function Tickets({
       ],
     };
   });
+  const [rerenderKey, setRerenderKey] = useState(0);
   const SIDE_BAR_SIZE = 140;
   return (
-    <View style={[atoms.flex_1, atoms.flex_row]}>
-      {/* <View
+    <View style={[atoms.flex_1]}>
+      <GHTouchableWithoutFeedback
         style={[
           {
+            width: "100%",
             height: "100%",
-            width: SIDE_BAR_SIZE,
           },
         ]}
+        onPress={() => {
+          stopEditing();
+        }}
       >
-        <ScrollView
-          contentContainerStyle={{
-            paddingBottom: 100,
-          }}
-          style={[
-            {
-              height: "100%",
-              width: SIDE_BAR_SIZE,
-            },
-          ]}
-        >
-          {LIST_ITEMS.map((item, index) => {
-            const isLast = index === LIST_ITEMS.length - 1;
+        <View style={[atoms.flex_1, atoms.flex_row]}>
+          {/* <View
+            style={[
+              {
+                height: "100%",
+                width: SIDE_BAR_SIZE,
+              },
+            ]}
+          >
+            <ScrollView
+              contentContainerStyle={{
+                paddingBottom: 100,
+              }}
+              style={[
+                {
+                  height: "100%",
+                  width: SIDE_BAR_SIZE,
+                },
+              ]}
+            >
+              {LIST_ITEMS.map((item, index) => {
+                const isLast = index === LIST_ITEMS.length - 1;
 
-            return (
-              <View key={item.id}>
-                <View
-                  style={[
-                    atoms.align_center,
-                    atoms.justify_center,
-                    {
-                      width: SIDE_BAR_SIZE,
-                      height: SIDE_BAR_SIZE,
-                      backgroundColor: "#E7EAFE",
-                    },
-                  ]}
-                >
-                  <Pressable
-                    onPress={() =>
-                      setSelectedTicketType(item.type as TicketType)
-                    }
-                    style={[
-                      [
+                return (
+                  <View key={item.id}>
+                    <View
+                      style={[
                         atoms.align_center,
                         atoms.justify_center,
                         {
                           width: SIDE_BAR_SIZE,
                           height: SIDE_BAR_SIZE,
-                          backgroundColor: "#fff",
+                          backgroundColor: "#E7EAFE",
                         },
-                        selectedTicketType === item.type && [
-                          atoms.rounded_md,
-                          {
-                            width: 100,
-                            height: 100,
-                          },
-                        ],
-                      ],
-                    ]}
-                  >
-                    <All_Stroke2_Corner0_Rounded />
-                    <Text style={[atoms.text_lg]}>{item.label}</Text>
-                  </Pressable>
-                </View>
-                {!isLast && <Divider />}
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View> */}
-      <View style={[atoms.flex_1, { backgroundColor: "#E7EAFE" }]}>
-        <ScrollView
-          horizontal={true}
-          scrollEventThrottle={16}
-          onScroll={(event) => {
-            scrollX.value = event.nativeEvent.contentOffset.x;
-          }}
-          contentContainerStyle={[
-            atoms.flex_wrap,
-            atoms.flex_row,
-            atoms.gap_md,
-            atoms.justify_start,
-            atoms.align_start,
-            atoms.px_md,
-            {
-              paddingTop: 30,
-              paddingBottom: 100,
-            },
-          ]}
-        >
-          {groupedProductsByTableData.map(
-            (item: GroupedProductsByTable, index) => (
-              <TicketItem
-                item={item}
-                totalItems={filteredData.length}
-                index={index}
-                key={`${item.tableId}` + index}
-                accessToken={accessToken}
-              />
-            )
-          )}
-        </ScrollView>
-        <View
-          style={[
-            atoms.absolute,
-            atoms.px_xl,
-            atoms.py_md,
-            {
-              width: "100%",
-              height: 130,
-              pointerEvents: "none",
-
-              bottom: 0,
-            },
-          ]}
-        >
-          <Animated.View
-            style={[
-              atoms.absolute,
-              atoms.rounded_md,
-              animatedStyle,
-              {
-                width: 550,
-                height: 110,
-                bottom: 12,
-                left: 16,
-                zIndex: 10,
-                borderWidth: 2,
-                borderColor: t.palette.primary_500,
-              },
-            ]}
-          />
-          <View
-            style={[
-              atoms.flex_row,
-              atoms.gap_lg,
-              {
-                width: "100%",
-                // height: 150,
-              },
-            ]}
-          >
-            {groupedProductsByTableData.map(
-              (item: GroupedProductsByTable, index) => (
-                <MinimizeTicketItem
+                      ]}
+                    >
+                      <Pressable
+                        onPress={() =>
+                          setSelectedTicketType(item.type as TicketType)
+                        }
+                        style={[
+                          [
+                            atoms.align_center,
+                            atoms.justify_center,
+                            {
+                              width: SIDE_BAR_SIZE,
+                              height: SIDE_BAR_SIZE,
+                              backgroundColor: "#fff",
+                            },
+                            selectedTicketType === item.type && [
+                              atoms.rounded_md,
+                              {
+                                width: 100,
+                                height: 100,
+                              },
+                            ],
+                          ],
+                        ]}
+                      >
+                        <All_Stroke2_Corner0_Rounded />
+                        <Text style={[atoms.text_lg]}>{item.label}</Text>
+                      </Pressable>
+                    </View>
+                    {!isLast && <Divider />}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View> */}
+          <View style={[atoms.flex_1, { backgroundColor: "#E7EAFE" }]}>
+            <FlatList
+              horizontal={true}
+              key={rerenderKey}
+              scrollEventThrottle={16}
+              onScroll={(event) => {
+                scrollX.value = event.nativeEvent.contentOffset.x;
+              }}
+              renderItem={({ item, index }) => (
+                <TicketItem
                   item={item}
                   totalItems={filteredData.length}
                   index={index}
                   key={`${item.tableId}` + index}
+                  accessToken={accessToken}
+                  isEditing={isEditing}
+                  onStartEditing={startEditing}
+                  onStopEditing={stopEditing}
+                  onSetRenderKey={setRerenderKey}
+                  rerenderKey={rerenderKey}
                 />
-              )
-            )}
+              )}
+              data={groupedProductsByTableData}
+              contentContainerStyle={[
+                atoms.gap_md,
+                atoms.justify_start,
+                atoms.align_start,
+                atoms.px_md,
+                {
+                  paddingTop: 30,
+                  paddingBottom: 100,
+                },
+              ]}
+            />
+            <View
+              style={[
+                atoms.absolute,
+                atoms.px_xl,
+                atoms.py_md,
+                {
+                  width: "100%",
+                  height: 130,
+                  pointerEvents: "none",
+
+                  bottom: 0,
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  atoms.absolute,
+                  atoms.rounded_md,
+                  animatedStyle,
+                  {
+                    width: 550,
+                    height: 110,
+                    bottom: 12,
+                    left: 16,
+                    zIndex: 10,
+                    borderWidth: 2,
+                    borderColor: t.palette.primary_500,
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  atoms.flex_row,
+                  atoms.gap_lg,
+                  {
+                    width: "100%",
+                    // height: 150,
+                  },
+                ]}
+              >
+                {groupedProductsByTableData.map(
+                  (item: GroupedProductsByTable, index) => (
+                    <MinimizeTicketItem
+                      item={item}
+                      totalItems={filteredData.length}
+                      index={index}
+                      key={`${item.tableId}` + index}
+                    />
+                  )
+                )}
+              </View>
+            </View>
           </View>
         </View>
-      </View>
+      </GHTouchableWithoutFeedback>
     </View>
   );
 }
@@ -1258,11 +1298,21 @@ export function TicketItem({
   index,
   totalItems,
   accessToken,
+  isEditing,
+  onStartEditing,
+  onStopEditing,
+  rerenderKey,
+  onSetRenderKey,
 }: {
   item: GroupedProductsByTable;
   index: number;
   totalItems: number;
   accessToken: string;
+  isEditing: boolean;
+  onStartEditing: () => void;
+  onStopEditing: () => void;
+  rerenderKey: number;
+  onSetRenderKey: (key: number) => void;
 }) {
   const { _ } = useLingui();
   const t = useTheme();
@@ -1278,12 +1328,19 @@ export function TicketItem({
   }, [item.products]);
 
   const timeLeft = useTimeLeft();
+  const { startShake, stopShake, animatedStyle } = useShakeAnimation();
 
+  // Use useEffect to control shake animation based on isEditing
+  useEffect(() => {
+    if (isEditing) {
+      startShake();
+    } else {
+      stopShake();
+    }
+  }, [isEditing]);
   const renderTicketFooter = (enableRowActions = false) => {
     return (
-      <List
-        layout={LinearTransition.duration(300)}
-        itemLayoutAnimation={LinearTransition.duration(300)}
+      <FlatList
         // CellRendererComponent={<Animated.View></Animated.View>}
         data={item.products}
         style={{ maxHeight: 400 }}
@@ -1476,22 +1533,55 @@ export function TicketItem({
     }
     return result;
   }, [item.type, item.tableName]);
+  const [gestureRenderKey, setRerenderKey] = useState(0); // Local rerender key
 
+  const queryClient = useQueryClient();
+
+  const handleDeleteTicket = () => {
+    // Remove all products with the same requestId
+    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        data: old.data.filter((p) => p.request.id !== item.requestId),
+      };
+    });
+    // onStopEditing();
+    onSetRenderKey(rerenderKey + 1); // Propagate key change to parent
+  };
+
+  const translateY = useSharedValue(0);
+  const context = useSharedValue({ y: 0 });
+  const display = useSharedValue("flex");
+  const gesture = Gesture.Fling()
+    .direction(Directions.UP)
+    .onStart(() => {
+      // translateY.value = withSpring(0); \
+      translateY.value = withTiming(-1000, { duration: 200 }, () => {
+        //Shorter animation
+        runOnJS(handleDeleteTicket)(); // Call after animation completes
+      });
+    })
+    .onEnd(() => {});
+
+  const animatedSwipeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
   return (
-    <Animated.View
-      entering={FadeInDown.duration(200).delay(index * 50)}
-      exiting={FadeOutDown.duration(200).delay((totalItems - 1 - index) * 50)}
-      layout={CurvedTransition.duration(500)}
-      style={[
-        atoms.rounded_md,
-        {
-          // width: 380,
-          backgroundColor: "#fff",
-          overflow: "hidden",
-        },
-      ]}
-    >
-      {/* <View
+    <GestureDetector key={rerenderKey} gesture={gesture}>
+      <Animated.View
+        style={[
+          atoms.rounded_md,
+          {
+            // width: 380,
+            backgroundColor: "#fff",
+            overflow: "hidden",
+          },
+          animatedStyle,
+          animatedSwipeStyle,
+        ]}
+      >
+        {/* <View
         style={[
           {
             width: "100%",
@@ -1500,17 +1590,25 @@ export function TicketItem({
           },
         ]}
       /> */}
-      <TouchableOpacity
-        style={[
-          atoms.flex_row,
-          atoms.align_start,
-          {
-            backgroundColor: getTitleByRequestType.backgroundColor,
-          },
-        ]}
-        // onPress={() => setTicketSumaryModalVisibility(true)}
-      >
-        {/* <View
+        <GHTouchableOpacity
+          onLongPress={() => {
+            onStartEditing();
+          }}
+          onPress={() => {
+            if (isEditing) {
+              onStopEditing();
+            }
+          }}
+          style={[
+            atoms.flex_row,
+            atoms.align_start,
+            {
+              backgroundColor: getTitleByRequestType.backgroundColor,
+            },
+          ]}
+          // onPress={() => setTicketSumaryModalVisibility(true)}
+        >
+          {/* <View
           style={[
             atoms.mx_xs,
             // atoms.px_xs,
@@ -1540,81 +1638,186 @@ export function TicketItem({
             }}
           />
         </View> */}
-        <View
-          style={[
-            atoms.flex_row,
-            atoms.justify_between,
-            atoms.align_center,
-            atoms.px_md,
-            atoms.py_sm,
-            atoms.flex_1,
-          ]}
-        >
-          <View style={[atoms.gap_xs]}>
-            <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
-              {item.type === "SHIPPING" ? (
-                <Bike_Stroke2_Corner0_Rounded
-                  fill={getTitleByRequestType.btnColor}
-                />
-              ) : item.type === "TAKE_AWAY" ? (
-                <Bag_Stroke2_Corner0_Rounded
-                  fill={getTitleByRequestType.btnColor}
-                />
-              ) : (
-                <></>
-              )}
-              <Text
-                style={[
-                  atoms.text_xl,
-                  atoms.font_bold,
-                  { color: getTitleByRequestType.btnColor },
-                ]}
-              >
-                {getTitleByRequestType.title}
-              </Text>
-            </View>
-            <View style={[atoms.gap_xs]}>
-              <View style={[atoms.flex_row]}>
-                <Text style={[atoms.text_md, atoms.font_bold]}>Order:</Text>
-                <Text style={[atoms.text_md]}> {item.order}</Text>
-              </View>
-              {item.type === "SHIPPING" ? (
-                <View style={[atoms.flex_row, atoms.align_center]}>
-                  <Text style={[atoms.text_md, atoms.font_bold]}>
-                    Giờ giao hàng:
-                  </Text>
-                  <Text style={[atoms.text_md]}> {timeLeft}</Text>
-                </View>
-              ) : (
-                <View style={[atoms.flex_row, atoms.align_center]}>
-                  <Clock_Stroke2_Corner0_Rounded />
-                  <Text style={[atoms.text_md]}> {timeAgo}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-          <Button
-            onPress={() => {}}
-            accessibilityHint={_(msg`Serve all`)}
-            accessibilityLabel={_(msg`Serve all`)}
-            variant="solid"
-            color="primary"
-            label={_(msg`Serve all`)}
-            size="large"
-            style={[{ backgroundColor: getTitleByRequestType.btnColor }]}
+          <View
+            style={[
+              atoms.flex_row,
+              atoms.justify_between,
+              atoms.align_center,
+              atoms.px_md,
+              atoms.py_sm,
+              atoms.flex_1,
+            ]}
           >
-            <ButtonText>
-              <Trans>Serve all</Trans>
-            </ButtonText>
-          </Button>
-        </View>
-      </TouchableOpacity>
-      <Divider />
-      <View style={[atoms.px_md, atoms.py_sm]}>{renderTicketFooter()}</View>
-      {/* {renderTicketSumaryModal} */}
-    </Animated.View>
+            <View style={[atoms.gap_xs]}>
+              <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
+                {item.type === "SHIPPING" ? (
+                  <Bike_Stroke2_Corner0_Rounded
+                    fill={getTitleByRequestType.btnColor}
+                  />
+                ) : item.type === "TAKE_AWAY" ? (
+                  <Bag_Stroke2_Corner0_Rounded
+                    fill={getTitleByRequestType.btnColor}
+                  />
+                ) : (
+                  <></>
+                )}
+                <Text
+                  style={[
+                    atoms.text_xl,
+                    atoms.font_bold,
+                    { color: getTitleByRequestType.btnColor },
+                  ]}
+                >
+                  {getTitleByRequestType.title}
+                </Text>
+              </View>
+              <View style={[atoms.gap_xs]}>
+                <View style={[atoms.flex_row]}>
+                  <Text style={[atoms.text_md, atoms.font_bold]}>Order:</Text>
+                  <Text style={[atoms.text_md]}> {item.order}</Text>
+                </View>
+                {item.type === "SHIPPING" ? (
+                  <View style={[atoms.flex_row, atoms.align_center]}>
+                    <Text style={[atoms.text_md, atoms.font_bold]}>
+                      Giờ giao hàng:
+                    </Text>
+                    <Text style={[atoms.text_md]}> {timeLeft}</Text>
+                  </View>
+                ) : (
+                  <View style={[atoms.flex_row, atoms.align_center]}>
+                    <Clock_Stroke2_Corner0_Rounded />
+                    <Text style={[atoms.text_md]}> {timeAgo}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            {!isEditing && (
+              <Animated.View
+                layout={LinearTransition}
+                entering={FadeIn}
+                exiting={FadeOut}
+              >
+                <Button
+                  onPress={() => {
+                    handleDeleteTicket();
+                  }}
+                  accessibilityHint={_(msg`Serve all`)}
+                  accessibilityLabel={_(msg`Serve all`)}
+                  variant="solid"
+                  PressableComponent={GHTouchableOpacity}
+                  color="primary"
+                  label={_(msg`Serve all`)}
+                  size="large"
+                  style={[{ backgroundColor: getTitleByRequestType.btnColor }]}
+                >
+                  <ButtonText>
+                    <Trans>Serve all</Trans>
+                  </ButtonText>
+                </Button>
+              </Animated.View>
+            )}
+            {isEditing && (
+              <Animated.View
+                layout={LinearTransition}
+                entering={FadeIn}
+                exiting={FadeOut}
+              >
+                <Button
+                  onPress={() => {
+                    Alert.alert(
+                      "Xoá phiếu yêu cầu",
+                      "Bạn có muốn xoá phiếu yêu cầu này?",
+                      [
+                        {
+                          text: "Huỷ",
+                          style: "cancel",
+                        },
+                        {
+                          text: "Xoá phiếu",
+                          style: "destructive",
+                          onPress: handleDeleteTicket,
+                        },
+                      ]
+                    );
+                  }}
+                  accessibilityHint={_(msg`Delete`)}
+                  accessibilityLabel={_(msg`Delete`)}
+                  variant="solid"
+                  color="negative"
+                  label={_(msg`Delete`)}
+                  size="large"
+                >
+                  <ButtonText>
+                    <Trans>Delete</Trans>
+                  </ButtonText>
+                </Button>
+              </Animated.View>
+            )}
+          </View>
+        </GHTouchableOpacity>
+        <Divider />
+        <View style={[atoms.px_md, atoms.py_sm]}>{renderTicketFooter()}</View>
+        {/* {renderTicketSumaryModal} */}
+      </Animated.View>
+    </GestureDetector>
   );
 }
+const useShakeAnimation = () => {
+  const rotateAnimation = useSharedValue(0);
+
+  const startShake = () => {
+    // Randomly choose initial direction (-1 for left, 1 for right)
+    const initialDirection = Math.random() < 0.5 ? -1 : 1;
+    const initialAngle = 0.05 * initialDirection;
+    const oppositeAngle = -0.05 * initialDirection;
+
+    // Initial shake with random direction
+    rotateAnimation.value = withSequence(
+      withTiming(initialAngle, { duration: 30 }),
+      withRepeat(
+        withSequence(
+          withTiming(oppositeAngle, { duration: 60 }),
+          withTiming(initialAngle, { duration: 60 })
+        ),
+        2,
+        true
+      ),
+      withTiming(0, { duration: 30 })
+    );
+
+    // Continue with subtle movement - random initial direction
+    rotateAnimation.value = withRepeat(
+      withSequence(
+        withTiming(initialAngle * 0.4, {
+          duration: 150,
+          easing: Easing.inOut(Easing.linear),
+        }),
+        withTiming(oppositeAngle * 0.4, {
+          duration: 150,
+          easing: Easing.inOut(Easing.linear),
+        })
+      ),
+      -1, // Infinite repeat
+      true
+    );
+  };
+
+  const stopShake = () => {
+    cancelAnimation(rotateAnimation);
+    rotateAnimation.value = withTiming(0);
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        rotate: `${rotateAnimation.value}rad`,
+      },
+    ],
+  }));
+
+  return { startShake, animatedStyle, stopShake };
+};
+
 const TickerFooterItem = ({
   item: foodItem,
   enableRowActions = false,
@@ -1744,7 +1947,16 @@ const TickerFooterItem = ({
                   <Trans>Qty</Trans>: {product.quantity}
                 </Text>
               </View>
-              <View style={[atoms.gap_md, atoms.flex_row, atoms.align_center]}>
+              <View
+                style={[
+                  atoms.gap_md,
+                  atoms.flex_row,
+                  atoms.align_center,
+                  {
+                    display: "none",
+                  },
+                ]}
+              >
                 <Button
                   label={_(msg`Go back`)}
                   size="large"

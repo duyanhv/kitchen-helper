@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/screens/Home/Home.tsx:908
+#: src/screens/Home/Home.tsx:863
 msgid "All"
 msgstr "Tất cả"
 
@@ -21,11 +21,11 @@ msgstr "Tất cả"
 #~ msgid "Basket"
 #~ msgstr "Giỏ hàng"
 
-#: src/screens/Home/Home.tsx:1791
+#: src/screens/Home/Home.tsx:2162
 msgid "Choose quantity ready to serve"
 msgstr "Chọn số món để trả "
 
-#: src/screens/Home/Home.tsx:1296
+#: src/screens/Home/Home.tsx:1481
 msgid "Close"
 msgstr "Đóng"
 
@@ -33,7 +33,14 @@ msgstr "Đóng"
 msgid "Close bottom drawer"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:909
+#: src/screens/Home/Home.tsx:1706
+#: src/screens/Home/Home.tsx:1707
+#: src/screens/Home/Home.tsx:1710
+#: src/screens/Home/Home.tsx:1714
+msgid "Delete"
+msgstr "Huỷ phiếu"
+
+#: src/screens/Home/Home.tsx:864
 msgid "Dine in"
 msgstr "Ăn tại bàn"
 
@@ -45,7 +52,7 @@ msgstr ""
 msgid "Double tap to close the dialog"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1828
+#: src/screens/Home/Home.tsx:2199
 msgid "Enter amount"
 msgstr "Nhập số lượng"
 
@@ -57,16 +64,16 @@ msgstr ""
 #~ msgid "Glass"
 #~ msgstr "Cốc"
 
+#: src/screens/Home/Home.tsx:353
+#: src/screens/Home/Home.tsx:364
+#: src/screens/Home/Home.tsx:380
+#: src/screens/Home/Home.tsx:391
 #: src/screens/Home/Home.tsx:402
-#: src/screens/Home/Home.tsx:413
-#: src/screens/Home/Home.tsx:429
-#: src/screens/Home/Home.tsx:440
-#: src/screens/Home/Home.tsx:451
-#: src/screens/Home/Home.tsx:645
-#: src/screens/Home/Home.tsx:660
-#: src/screens/Home/Home.tsx:677
-#: src/screens/Home/Home.tsx:1543
-#: src/screens/Home/Home.tsx:1571
+#: src/screens/Home/Home.tsx:591
+#: src/screens/Home/Home.tsx:606
+#: src/screens/Home/Home.tsx:620
+#: src/screens/Home/Home.tsx:1914
+#: src/screens/Home/Home.tsx:1942
 #: src/components/Layout/Header/index.tsx:112
 msgid "Go back"
 msgstr ""
@@ -91,7 +98,7 @@ msgstr "Đặt món"
 msgid "Open drawer menu"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:912
+#: src/screens/Home/Home.tsx:867
 msgid "Partner"
 msgstr ""
 
@@ -103,26 +110,30 @@ msgstr ""
 msgid "Processing by items"
 msgstr "Chi tiết theo món"
 
-#: src/screens/Home/Home.tsx:642
-#: src/screens/Home/Home.tsx:816
-#: src/screens/Home/Home.tsx:1538
-#: src/screens/Home/Home.tsx:1648
-#: src/screens/Home/Home.tsx:1809
+#: src/screens/Home/Home.tsx:588
+#: src/screens/Home/Home.tsx:759
+#: src/screens/Home/Home.tsx:1909
+#: src/screens/Home/Home.tsx:2019
+#: src/screens/Home/Home.tsx:2180
 msgid "Qty"
 msgstr "Số lượng"
 
-#: src/screens/Home/Home.tsx:495
+#: src/screens/Home/Home.tsx:440
 msgid "Serve"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:828
-#: src/screens/Home/Home.tsx:829
-#: src/screens/Home/Home.tsx:832
-#: src/screens/Home/Home.tsx:836
-#: src/screens/Home/Home.tsx:1260
-#: src/screens/Home/Home.tsx:1261
-#: src/screens/Home/Home.tsx:1264
-#: src/screens/Home/Home.tsx:1268
+#: src/screens/Home/Home.tsx:771
+#: src/screens/Home/Home.tsx:772
+#: src/screens/Home/Home.tsx:775
+#: src/screens/Home/Home.tsx:779
+#: src/screens/Home/Home.tsx:1445
+#: src/screens/Home/Home.tsx:1446
+#: src/screens/Home/Home.tsx:1449
+#: src/screens/Home/Home.tsx:1453
+#: src/screens/Home/Home.tsx:1668
+#: src/screens/Home/Home.tsx:1669
+#: src/screens/Home/Home.tsx:1672
+#: src/screens/Home/Home.tsx:1677
 msgid "Serve all"
 msgstr "Trả hết món"
 
@@ -131,7 +142,7 @@ msgstr "Trả hết món"
 msgid "Settings"
 msgstr ""
 
-#: src/screens/Home/Home.tsx:911
+#: src/screens/Home/Home.tsx:866
 msgid "Shipping"
 msgstr "Giao hàng"
 
@@ -148,7 +159,7 @@ msgstr "Đăng nhập"
 #~ msgid "Sign up"
 #~ msgstr "Đăng ký"
 
-#: src/screens/Home/Home.tsx:910
+#: src/screens/Home/Home.tsx:865
 msgid "Takeaway"
 msgstr "Mang đi"
 
@@ -164,11 +175,11 @@ msgstr ""
 msgid "Ticket"
 msgstr "Phiếu yêu cầu"
 
-#: src/screens/Home/Home.tsx:1213
+#: src/screens/Home/Home.tsx:1398
 msgid "Ticket detail"
 msgstr "Chi tiết phiếu chế biến"
 
-#: src/screens/Home/Home.tsx:1943
+#: src/screens/Home/Home.tsx:2314
 msgid "Trả món"
 msgstr ""
 
@@ -176,9 +187,9 @@ msgstr ""
 msgid "Unable to connect. Please check your internet connection and try again."
 msgstr ""
 
-#: src/screens/Home/Home.tsx:1247
-#: src/screens/Home/Home.tsx:1248
-#: src/screens/Home/Home.tsx:1251
-#: src/screens/Home/Home.tsx:1255
+#: src/screens/Home/Home.tsx:1432
+#: src/screens/Home/Home.tsx:1433
+#: src/screens/Home/Home.tsx:1436
+#: src/screens/Home/Home.tsx:1440
 msgid "Won't do"
 msgstr "Huỷ chế biến"

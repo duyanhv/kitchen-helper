@@ -405,7 +405,6 @@ const FoodTicketItem = ({
             color="negative"
             shape="square"
             onPress={() => {}}
-            hitSlop={HITSLOP_30}
           >
             <ButtonIcon icon={Close_Stroke2_Corner0_Rounded} size="xl" />
           </Button>
@@ -416,7 +415,6 @@ const FoodTicketItem = ({
             color="primary"
             shape="square"
             onPress={() => {}}
-            hitSlop={HITSLOP_30}
           >
             <ButtonIcon icon={HeatingFoodIcon} size="xl" />
           </Button>
@@ -432,7 +430,6 @@ const FoodTicketItem = ({
             color="negative"
             shape="square"
             onPress={() => {}}
-            hitSlop={HITSLOP_30}
           >
             <ButtonIcon icon={Close_Stroke2_Corner0_Rounded} size="xl" />
           </Button>
@@ -443,7 +440,6 @@ const FoodTicketItem = ({
             color="secondary"
             shape="square"
             onPress={() => {}}
-            hitSlop={HITSLOP_30}
           >
             <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
           </Button>
@@ -454,7 +450,6 @@ const FoodTicketItem = ({
             color="primary"
             shape="square"
             onPress={() => {}}
-            hitSlop={HITSLOP_30}
           >
             <ButtonIcon icon={Bell_Stroke2_Corner0_Rounded} size="xl" />
           </Button>
@@ -651,7 +646,6 @@ const FoodTicketItem = ({
                     onPress={() => {
                       handleRemoveProduct(product.products);
                     }}
-                    hitSlop={HITSLOP_30}
                   >
                     {/* <ServeIcon /> */}
                     <ButtonIcon icon={ServeIcon} size="xl" />
@@ -666,7 +660,6 @@ const FoodTicketItem = ({
                       onPress={() => {
                         setSelectedProduct(product);
                       }}
-                      hitSlop={HITSLOP_30}
                     >
                       <ButtonIcon icon={ServeIcon} size="xl" />
                     </Button>
@@ -695,7 +688,6 @@ const FoodTicketItem = ({
                         ]
                       );
                     }}
-                    hitSlop={HITSLOP_30}
                   >
                     <ButtonIcon
                       icon={Close_Stroke2_Corner0_Rounded}
@@ -1103,9 +1095,7 @@ export function Tickets({
             )
           )}
         </ScrollView>
-        <View
-        style={[atoms.absolute,]}
-        ></View>
+        <View style={[atoms.absolute]}></View>
       </View>
     </View>
   );
@@ -1374,9 +1364,9 @@ export function TicketItem({
           ]}
         >
           <View style={[atoms.gap_xs]}>
-            <Text style={[atoms.text_lg]}>{`Phiếu yêu cầu gọi món - ${
-              item.tableName
-            }`}</Text>
+            <Text
+              style={[atoms.text_lg]}
+            >{`Phiếu yêu cầu gọi món - ${item.tableName}`}</Text>
             <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
               <Clock_Stroke2_Corner0_Rounded />
               <View style={[atoms.flex_wrap]}>
@@ -1553,7 +1543,6 @@ const TickerFooterItem = ({
                   onPress={() => {
                     handleRemoveProduct(product.products);
                   }}
-                  hitSlop={HITSLOP_30}
                 >
                   <ButtonIcon icon={ServeIcon} size="xl" />
                 </Button>
@@ -1591,7 +1580,6 @@ const TickerFooterItem = ({
                       },
                     ]);
                   }}
-                  hitSlop={HITSLOP_30}
                 >
                   <ButtonIcon icon={Close_Stroke2_Corner0_Rounded} size="2xl" />
                 </Button>
@@ -1706,28 +1694,75 @@ export const ServeQuantityModal = ({
   };
   const queryClient = useQueryClient();
   const handleServeProduct = () => {
-    if (!product || product.products.length < Number(quantity)) {
+    const enteredQuantity = Number(quantity);
+  
+    if (!product || !product.products || enteredQuantity <= 0) {
       onClose();
       return;
     }
-    const productsToRemove = product.products.slice(-quantity);
-    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
-      if (!old) return old;
-
-      // Filter out the removed products
-      const newProducts = old.data.filter(
-        (p) =>
-          !productsToRemove.find((removedProduct) => removedProduct.id === p.id)
-      );
-
-      return {
-        ...old,
-        data: newProducts,
-        totalItems: newProducts.length,
-      };
+  
+    let remainingQuantityToRemove = enteredQuantity;
+    const productsToRemove = []; // Array to track products to be removed (fully or partially)
+    const productIdsToRemove = new Set(); // Set to track only unique product IDs
+  
+    // 1. Prioritize removing entire products
+    for (const prod of product.products) {
+      if (prod.quantity <= remainingQuantityToRemove) {
+        productsToRemove.push(prod); // Remove the whole product
+        remainingQuantityToRemove -= prod.quantity;
+        productIdsToRemove.add(prod.id); // Add product ID to set
+      }
+      if (remainingQuantityToRemove === 0) break; // Stop if target quantity reached
+    }
+  
+    // 2. If quantity still remains, partially remove from the next product
+    if (
+      remainingQuantityToRemove > 0 &&
+      product.products.length > productsToRemove.length
+    ) {
+      const nextProductIndex = productsToRemove.length; // Get the index of the next product to partially remove. This assumes the loop above processed the products in order.
+      if (nextProductIndex < product.products.length) {
+        const nextProduct = product.products[nextProductIndex];
+        const partialProduct = {
+          ...nextProduct,
+          quantity: remainingQuantityToRemove,
+        };
+        productsToRemove.push(partialProduct);
+        productIdsToRemove.add(nextProduct.id); // Add product ID to the set
+      }
+    }
+  
+    queryClient.setQueryData<ProductList>(["requestProduct"], (oldData) => {
+      if (!oldData) return oldData;
+  
+      const updatedProducts = [...oldData.data]; // Create a copy to avoid direct mutation
+  
+      // Update quantities of products with matching IDs
+      for (const productId of productIdsToRemove) {
+        const productIndex = updatedProducts.findIndex(
+          (p) => p.id === productId
+        );
+        if (productIndex !== -1) {
+          const productToUpdate = updatedProducts[productIndex];
+          const removedProduct = productsToRemove.find(
+            (p) => p.id === productId
+          );
+          if (removedProduct) {
+            updatedProducts[productIndex] = {
+              ...productToUpdate,
+              quantity: productToUpdate.quantity - removedProduct.quantity,
+            };
+            if (updatedProducts[productIndex].quantity <= 0) {
+              // Remove product if quantity is zero or negative
+              updatedProducts.splice(productIndex, 1);
+            }
+          }
+        }
+      }
+  
+      return { ...oldData, data: updatedProducts }; // Return updated data
     });
-
-    // Close the modal
+  
     onClose();
   };
 

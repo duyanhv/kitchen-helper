@@ -26,10 +26,12 @@ const updateProductsStatus = async ({
   productIds,
   status,
   accessToken,
+  returnedQuantity,
 }: {
   productIds: string[];
   status: "COMPLETED";
   accessToken: string;
+  returnedQuantity: number;
 }) => {
   const response = await fetch(PATH.BASE_URL + PATH.PRODUCT.REQUEST, {
     method: "PUT",
@@ -40,6 +42,7 @@ const updateProductsStatus = async ({
     body: JSON.stringify({
       status,
       ids: productIds,
+      returnedQuantity,
     }),
   });
 

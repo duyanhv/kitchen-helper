@@ -195,7 +195,6 @@ export function FoodTicket({
   emit: (event: string, data: any) => void;
   accessToken: string;
 }) {
-  console.log(products, "products");
   const { _ } = useLingui();
   const t = useTheme();
   const foodTickets = useMemo(() => {
@@ -507,14 +506,17 @@ const FoodTicketItem = ({
     mutationFn: ({
       productIds,
       status,
+      returnedQuantity,
     }: {
       productIds: string[];
       status: string;
+      returnedQuantity: number
     }) =>
       productService.updateProductsStatus({
         productIds,
         status: "COMPLETED",
         accessToken: accessToken,
+        returnedQuantity,
       }),
     onSuccess: (data) => {
       if (data && data.status === "success") {
@@ -527,9 +529,11 @@ const FoodTicketItem = ({
   });
 
   const handleRemoveProduct = (products: Product[]) => {
+    console.log(products, "removeProducts");
     updateProductStatus({
       productIds: products.map((product) => product.id),
       status: "COMPLETED",
+      returnedQuantity: products.reduce((acc, p)=> acc + p.quantity, 0),
       accessToken: accessToken,
     });
     queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
@@ -878,6 +882,7 @@ const FoodTicketItem = ({
         product={selectedProduct}
         visible={!!selectedProduct}
         onClose={() => setSelectedProduct(undefined)}
+        accessToken={accessToken}
       />
     </View>
   );
@@ -971,7 +976,6 @@ export function Tickets({
       ),
     }));
   }, [products]);
-  console.log(groupedProductsByTableData, "groupedProductsByTableData");
   const filteredData = React.useMemo(() => {
     if (selectedTicketType === "all") {
       return data;
@@ -1089,7 +1093,7 @@ export function Tickets({
                 item={item}
                 totalItems={filteredData.length}
                 index={index}
-                key={item.tableId}
+                key={item.requestId}
                 accessToken={accessToken}
               />
             )
@@ -1127,6 +1131,35 @@ export function TicketItem({
       locale: dateFnsLocale,
     });
   }, [item.products, dateFnsLocale]);
+
+
+  const { mutate: updateProductStatus } = useMutation({
+    mutationKey: ["updateProductsStatus"],
+    mutationFn: ({
+      productIds,
+      status,
+      returnedQuantity,
+    }: {
+      productIds: string[];
+      status: string;
+      returnedQuantity: number
+    }) =>
+      productService.updateProductsStatus({
+        productIds,
+        status: "COMPLETED",
+        accessToken: accessToken,
+        returnedQuantity,
+      }),
+    onSuccess: (data) => {
+      if (data && data.status === "success") {
+        // Toast.show("Đã thực hiện", "success");
+      }
+    },
+    onError: (e) => {
+      console.log(e, "error");
+    },
+  });
+const queryClient = useQueryClient()
   const renderTicketFooter = (enableRowActions = false) => {
     return (
       <List
@@ -1366,7 +1399,7 @@ export function TicketItem({
           <View style={[atoms.gap_xs]}>
             <Text
               style={[atoms.text_lg]}
-            >{`Phiếu yêu cầu gọi món - ${item.tableName}`}</Text>
+            >{`${item.tableName}`}</Text>
             <View style={[atoms.flex_row, atoms.align_center, atoms.gap_xs]}>
               <Clock_Stroke2_Corner0_Rounded />
               <View style={[atoms.flex_wrap]}>
@@ -1376,14 +1409,27 @@ export function TicketItem({
               </View>
             </View>
           </View>
-          {/* <Button
+          <Button
             onPress={() => {
-              const allProducts = foodItem.items.reduce<Product[]>(
-                (acc, item) => {
-                  return [...acc, ...item.products];
-                },
-                []
-              );
+const listIdToRemove = item.products.reduce((acc, p) => {
+  return acc.concat(...p.items.map((i) => i.products.map((p) => p.id)));
+}, [])
+              updateProductStatus({
+                accessToken: accessToken,
+                productIds: listIdToRemove,
+                returnedQuantity: 100000
+              })
+
+    queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
+      if (!old) return old;
+      const newProducts = old.data.filter(
+        (product) => !listIdToRemove.find((p) => p === product.id)
+      );
+      return {
+        ...old,
+        data: newProducts,
+      };
+    });
             }}
             accessibilityHint={_(msg`Serve all`)}
             accessibilityLabel={_(msg`Serve all`)}
@@ -1395,7 +1441,7 @@ export function TicketItem({
             <ButtonText>
               <Trans>Serve all</Trans>
             </ButtonText>
-          </Button> */}
+          </Button>
         </View>
       </TouchableOpacity>
       <Divider />
@@ -1428,19 +1474,23 @@ const TickerFooterItem = ({
   });
 
   const queryClient = useQueryClient();
+  
   const { mutate: updateProductStatus } = useMutation({
     mutationKey: ["updateProductsStatus"],
     mutationFn: ({
       productIds,
       status,
+      returnedQuantity,
     }: {
       productIds: string[];
       status: string;
+      returnedQuantity: number
     }) =>
       productService.updateProductsStatus({
         productIds,
         status: "COMPLETED",
         accessToken: accessToken,
+        returnedQuantity,
       }),
     onSuccess: (data) => {
       if (data && data.status === "success") {
@@ -1456,6 +1506,7 @@ const TickerFooterItem = ({
     updateProductStatus({
       productIds: products.map((product) => product.id),
       status: "COMPLETED",
+      returnedQuantity: products.reduce((acc, p)=> acc + p.quantity, 0),
       accessToken: accessToken,
     });
     queryClient.setQueryData<ProductList>(["requestProduct"], (old) => {
@@ -1652,6 +1703,7 @@ export const ServeQuantityModal = ({
   visible,
   onClose,
   product,
+  accessToken,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -1660,6 +1712,7 @@ export const ServeQuantityModal = ({
     quantity: number;
     products: Product[];
   };
+  accessToken: string;
 }) => {
   const t = useTheme();
   const { _ } = useLingui();
@@ -1693,6 +1746,33 @@ export const ServeQuantityModal = ({
     setQuantity(quantity + number);
   };
   const queryClient = useQueryClient();
+
+  const { mutate: updateProductStatus } = useMutation({
+    mutationKey: ["updateProductsStatus"],
+    mutationFn: ({
+      productIds,
+      status,
+      returnedQuantity,
+    }: {
+      productIds: string[];
+      status: string;
+      returnedQuantity: number
+    }) =>
+      productService.updateProductsStatus({
+        productIds,
+        status: "COMPLETED",
+        accessToken: accessToken,
+        returnedQuantity,
+      }),
+    onSuccess: (data) => {
+      if (data && data.status === "success") {
+        // Toast.show("Đã thực hiện", "success");
+      }
+    },
+    onError: (e) => {
+      console.log(e, "error");
+    },
+  });
   const handleServeProduct = () => {
     const enteredQuantity = Number(quantity);
   
@@ -1731,7 +1811,12 @@ export const ServeQuantityModal = ({
         productIdsToRemove.add(nextProduct.id); // Add product ID to the set
       }
     }
-  
+    updateProductStatus({
+      productIds: productsToRemove.map((product) => product.id),
+      status: "COMPLETED",
+      returnedQuantity: productsToRemove.reduce((acc, p)=> acc + p.quantity, 0),
+      accessToken: accessToken,
+    })
     queryClient.setQueryData<ProductList>(["requestProduct"], (oldData) => {
       if (!oldData) return oldData;
   
